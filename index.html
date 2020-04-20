@@ -114,7 +114,7 @@ function openButton(){
 
 function findButton(){
 	const bbox = map.getBounds().toBBoxString();
-	const url = 'http://api.openstreetmap.org/api/0.6/notes?limit=10&closed=0&bbox=' + bbox;
+	const url = 'https://api.openstreetmap.org/api/0.6/notes?limit=10&closed=0&bbox=' + bbox;
 	let request = new XMLHttpRequest();
 	request.open('GET', url , true);
 	request.onload = function () {
