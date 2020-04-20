@@ -1,0 +1,263 @@
+<html>
+<head>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.3.1/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.3.1/dist/leaflet.js"></script>
+    <script src='https://unpkg.com/mapillary-js@2.20.0/dist/mapillary.min.js'></script>
+    <link href='https://unpkg.com/mapillary-js@2.20.0/dist/mapillary.min.css' rel='stylesheet' />
+	<link rel="stylesheet" href="leaflet-beautify-marker-icon.css" />
+	<script src="leaflet-beautify-marker-icon.js"></script>
+	<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.0.13/css/all.css" integrity="sha384-DNOHZ68U8hZfKXOrtjWvjxusGo9WQnrNx2sqG0tfsghAvtVlRW3tvkXWZh58N9jp" crossorigin="anonymous">
+<style type="text/css">
+
+
+#mapcontainer {
+	width: 640px;
+	height: 480px;
+
+}
+
+#mapviewer {
+	float:left;
+	padding: 10px
+}
+
+#mly {
+	width: 640px;
+	height: 480px;
+}
+
+#photoviewer {
+	float:left;
+	padding: 10px
+}
+
+#infoviewer {
+	float:left;
+	padding: 10px
+}
+
+#attributions {
+	clear:left;
+
+	background-color: #ddd;
+}
+
+</style>
+</head>
+<body onload="initMap()">
+<h1></h1>
+<div id="mapviewer">
+
+
+    <div id='mapcontainer'></div>
+    <ol>
+        <li>OSM node ID: <input type="text" class="" id="node_id" value="5058334144"><input type="button" class="" id="" value="Open" onclick="openButton()">
+    </ol>
+
+</div>
+
+<div id="photoviewer">
+<div id='mly'></div>
+</div>
+
+<div id="infoviewer">
+
+<span id="info"></span>
+
+</div>
+
+<div id="attributions">
+<p>Attributions
+<ul>
+<li>Images from <a href="https://www.mapillary.com/">Mapillary</a></li>
+<li>Map: <a href="https://www.openstreetmap.org/copyright">(C)OpenStreetMap contributors</a></li>
+<li>Display map: <a href="https://leafletjs.com/">Leaflet</a></li>
+</ul>
+</div>
+<p>Bug report at <a href="https://github.com/tankaru/">Github</a></p>
+
+<script>
+
+let map;
+let poi_marker;
+let photo_marker;
+let mly;
+
+const client_id = 'NEh3V0ZjaE1fT1Nkdk9jMnJlSGNQQTo1NzRiNDEwZmM3MzZhNmIw';
+
+
+const poi_options = {
+	icon: 'circle',
+	iconShape: 'marker',
+	backgroundColor: 'blue',
+	borderColor: 'blue',
+	textColor: 'white',
+};
+
+
+const photo_options = {
+	icon: 'camera',
+	iconShape: 'circle',
+	backgroundColor: 'white',
+	borderColor: '#555',
+	textColor: '#555',
+};
+
+//Openボタンを押したら
+function openButton(){
+	const osm_node_id = document.getElementById("node_id").value;
+	loadOsmNode(osm_node_id);
+}
+
+//OSMデータの読み込み
+function loadOsmNode(osm_node_id) {
+	const url = 'http://api.openstreetmap.org/api/0.6/node/' + osm_node_id + '.json';
+	let request = new XMLHttpRequest();
+	request.open('GET', url , true);
+	request.onload = function () {
+		const data = JSON.parse(this.response);
+		console.log(JSON.stringify(data));
+
+		const lat = data.elements[0].lat;
+		const lon = data.elements[0].lon;
+
+		
+		loadMapillaryPhoto([lat, lon]);
+		showMapMarker([lat, lon]);
+		showMapillaryMarker([lat, lon]);
+		
+		const tags = data.elements[0].tags;
+		
+		const html = "<h2>OSM data</h2>" + '<pre style="font-size: large;">' + JSON.stringify(tags, null, 2) + "</pre>";
+		document.getElementById("info").innerHTML = html;
+		
+	}
+	request.send();
+}
+//Mapillaryデータの読み込み
+
+function loadMapillaryPhoto([lat, lon]){
+	const url = 'https://a.mapillary.com/v3/images?client_id=' + client_id + '&closeto=' + lon + ',' + lat + '&lookat=' + lon + ',' + lat + '&radius=20&per_page=20';
+	let request = new XMLHttpRequest();
+	request.open('GET', url , true);
+	request.onload = function () {
+		const data = JSON.parse(this.response);
+		console.log(JSON.stringify(data));
+		
+		const features = data.features;
+		//一番遠い写真を選ぶ。少し離れていたほうが地物を写真内に収めるにはよいかも？
+		const feature = features[features.length-1];
+		const properties = feature.properties;
+		const key = properties.key;
+		
+		showMapillaryPhoto(key);
+
+
+	}
+	request.send();	
+}
+
+//LeafletにPOI位置を表示
+function showMapMarker([lat, lon]){
+	
+	poi_marker.remove();
+	poi_marker.setLatLng([lat, lon]).addTo(map);
+	map.setView([lat, lon], 18);
+}
+
+
+//Mapillary.jsに画像を表示
+function showMapillaryPhoto(key){
+	mly.moveToKey(key);
+}
+
+//Mapillary.jsにマーカーを表示
+function showMapillaryMarker([lat, lon]){
+	console.log("hoge");
+	const defaultMarker = new Mapillary.MarkerComponent.SimpleMarker(
+		'default-id',
+		{ lat: lat, lon: lon },
+		{
+			ballColor: "#fff",
+			ballOpacity: 0.5,
+			color: "#00f",
+			interactive: false,
+			opacity: 0.3,
+			radius: 0.7,
+		});
+	const markerComponent = mly.getComponent('marker');
+	markerComponent.add([defaultMarker]);
+}
+
+
+//http://ktgis.net/service/leafletlearn/index.html
+function initMap() {
+	mly = new Mapillary.Viewer(
+		'mly',
+		client_id,
+		null,
+        {
+			component: {
+				cover: false,
+				marker: true,
+			},
+		}
+	);
+	
+	//ビューワで画像を移動したら、マップのマーカー選択を移動
+
+	mly.on(Mapillary.Viewer.nodechanged, function(node) {
+		console.log("Mapillary.js node changed:", node.key);
+
+		photo_marker.remove();
+		photo_marker.setLatLng(node.latLon).addTo(map);
+	});
+	
+
+	
+  //地図を表示するdiv要素のidを設定
+  map = L.map('mapcontainer');
+  //地図の中心とズームレベルを指定
+  map.setView([0, 0], 1);
+  //表示するタイルレイヤのURLとAttributionコントロールの記述を設定して、地図に追加する
+  const osmLayer = L.tileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+	  attribution: "(C)<a href='https://www.openstreetmap.org/copyright' target='_blank'>OpenStreetMap contributors</a>",
+	  maxZoom: 21,
+	  maxNativeZoom: 19,
+	  minZoom: 1,
+	  //maxBounds: [[35.47, 139.62], [35.45, 139.64]],
+  }).addTo(map);
+  const kokudoLayer = L.tileLayer('https://cyberjapandata.gsi.go.jp/xyz/seamlessphoto/{z}/{x}/{y}.jpg',{
+	attribution: '© <a href="https://maps.gsi.go.jp/development/ichiran.html">国土地理院</a>',
+	maxZoom: 21,
+	maxNativeZoom: 18,
+	minZoom: 14,
+	});
+	
+	const baseMap = {
+		"OpenStreetMap":osmLayer,
+		"国土地理院シームレス":kokudoLayer,
+	};
+ 
+	const mapillaryLayer = L.tileLayer('https://raster-tiles.mapillary.com/v0.1/{z}/{x}/{y}.png',{
+		attribution: '(C)<a href="https://www.mapillary.com/">Mapillary</a>, CC BY',
+	  maxZoom: 21,
+	  maxNativeZoom: 17,
+	});
+	mapillaryLayer.setOpacity(0.65);
+	const overlayLayer = {
+		"Mapillary":mapillaryLayer,
+	}
+
+	//レイヤ設定
+	const layerControl = L.control.layers(baseMap,overlayLayer,{"collapsed":true,});
+    layerControl.addTo(map);
+
+	poi_marker = L.marker([0,0], { icon: L.BeautifyIcon.icon(poi_options), draggable: false });
+	photo_marker = L.marker([0,0], { icon: L.BeautifyIcon.icon(photo_options), draggable: false });
+}
+
+</script>
+</body>
+</html>
+
