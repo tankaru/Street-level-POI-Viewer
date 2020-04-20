@@ -145,6 +145,7 @@ function findButton(){
 				const item = comments[i];
 				comment += item.textContent;
 			}
+			comment += '<br/><a href="https://www.openstreetmap.org/note/' + id[0].textContent + '">Edit Notes</a>';
 			
 			const popup_contents = comment;
 			
