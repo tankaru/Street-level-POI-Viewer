@@ -51,7 +51,7 @@
 
     <div id='mapcontainer'></div>
     <ol>
-        <li>OSM node ID: <input type="text" class="" id="node_id" value="5058334144"><input type="button" class="" id="" value="Open" onclick="openButton()">
+        <li>OSM node ID: <input type="text" class="" id="node_id" value="2672774383"><input type="button" class="" id="" value="Open" onclick="openButton()">
     </ol>
 
 </div>
@@ -111,7 +111,7 @@ function openButton(){
 
 //OSMデータの読み込み
 function loadOsmNode(osm_node_id) {
-	const url = 'http://api.openstreetmap.org/api/0.6/node/' + osm_node_id + '.json';
+	const url = 'https://api.openstreetmap.org/api/0.6/node/' + osm_node_id + '.json';
 	let request = new XMLHttpRequest();
 	request.open('GET', url , true);
 	request.onload = function () {
