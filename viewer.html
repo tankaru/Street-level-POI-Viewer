@@ -111,7 +111,7 @@ POI data: <a href="https://www.openstreetmap.org/copyright">(C)OpenStreetMap con
 
 			const encoded_query = encodeURI(query);
 			
-			const url = 'http://overpass-api.de/api/interpreter?data=' + encoded_query;
+			const url = 'https://overpass-api.de/api/interpreter?data=' + encoded_query;
 			
 			let request = new XMLHttpRequest();
 			request.open('GET', url , true);
