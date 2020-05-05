@@ -75,7 +75,11 @@ function getRoads(){
 	const bbox = '(' + minlat + ',' + minlon + ',' + maxlat + ',' + maxlon + ')';
 	
 
-	const query = '[out:json];(' + /*'way["building"]' + bbox + ';'+*/ /*'way["highway"]' + bbox + ';'+ */'node["amenity"]' + bbox + ';'+ ');(._;>;);out body;';
+	const query = 
+		'[out:json];(' /* + 'way["building"]' + bbox + ';'+*/ /*'way["highway"]' + bbox + ';'+ */ 
+		+ 'node["amenity"]' + bbox + ';'
+		+ 'node["shop"]' + bbox + ';'
+		+ ');(._;>;);out body;';
 
 	const encoded_query = encodeURI(query);
 	
@@ -215,7 +219,10 @@ function addNodes(nodes){
 		const xy = node_xys[j];
 		const div = document.createElement('div');
 		if (xy.osm.tags.name){
-			div.innerHTML = xy.osm.tags.name;
+
+			
+			div.innerHTML = divContent(xy.osm);
+			div.className = "tooltip1";
 			//遠い店舗は文字を小さく
 			const fontsize = Math.min(14, Math.round(12*25/xy.distance));
 			div.style.fontSize = fontsize + "pt";
@@ -233,11 +240,26 @@ function addNodes(nodes){
 	window.addEventListener("resize", function() { viewer.resize(); });
 }
 
+function divContent(osm){
+	let content;
+	const tooltip = tooltipContent(osm);
+	content = `<p><a target="_blank" href="https://www.openstreetmap.org/node/${osm.id}">${osm.tags.name}</a></p>
+	<div class="description1">${tooltip}</div>`;
+	return content;
+
+}
+
+function tooltipContent(osm){
+	let tooltip_content = JSON.stringify(osm.tags, null, 1);
+
+	tooltip_content = tooltip_content.replace(/[{}"]/g, '').replace(/,/g, '').replace(/^\n/g,'');
+	return tooltip_content;
+}
+
 //
 function addWays(ways, nodes, color, width, name){
 		//-----
 	let way_polygons = [];
-	console.log("ways:", ways.length);
 
 	for (let i=0; i<ways.length; i++){
 

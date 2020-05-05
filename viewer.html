@@ -13,6 +13,41 @@
         #mly { 	height: 100%; }
 		#nav {position:fixed; top:10px; left:10px; background-color: white; padding: 3px}
 		#attributions {font-size: small; position:fixed; top:10px; right:10px; background-color: #ddd; padding: 3px}
+        
+        
+/* https://www.jungleocean.com/demo/tooltip-css/ */
+.tooltip1{
+    position: relative;
+    display: inline-block;
+}
+.tooltip1 p{
+    margin:0;
+    padding:0;
+
+}
+.tooltip1 p a{
+    color:#000;
+    text-decoration: none;
+}
+.description1 {
+    display: none;
+    position: absolute;
+    padding: 2px;
+    font-size: small;
+    border-radius: 1px;
+    background: rgb(255, 241, 179);
+    width:max-content;
+    white-space: pre;
+
+}
+
+.tooltip1:hover .description1{
+    display: inline-block;
+    bottom: 15px;
+    left: 10px;
+}
+
+
     </style>
 </head>
 <body>
