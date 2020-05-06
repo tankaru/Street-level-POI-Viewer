@@ -142,20 +142,3 @@ function decodePath(encoded, is3D) {
     // console.log("decoded " + len + " coordinates in " + ((end - start) / 1000) + "s");
     return array;
 };
-
-function getLatLonZoom(url) {
-  const match = url.match(/www\.mapillary\.com\/app\/\?lat=(-?\d[0-9.]*)&lng=(-?\d[0-9.]*)&z=(\d{1,2})/);
-  if (match) {
-	const [, lat, lon,zoom] = match;
-	return [lat, lon, zoom];
-  }
-}
-function latLonZoomToBbox(lat, lon, zoom) {
-	const part = Math.pow(0.5,zoom);
-	const minlon = Number(lon) - 360*part/2;
-	const maxlon = Number(lon) + 360*part/2;
-	const minlat = Number(lat) - 180*part/2;
-	const maxlat = Number(lat) + 180*part/2;
-	return [minlon, minlat, maxlon, maxlat];
-
-}

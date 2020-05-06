@@ -2,58 +2,64 @@ let node_latlon;
 let node_ca;
 let overpassjson;
 let specialjson;
+let map;
+let viewer;
+let viewer_marker;
 
 const R = 6378100;	
 const height = 2.2;
 
-var tagKey = 'S0x2iwuJnH2Gj8ONzhvcrQ';
-
-var viewer = new Mapillary.Viewer(
-	"mly",
-	"NEh3V0ZjaE1fT1Nkdk9jMnJlSGNQQTowYjljOTA5MWI0N2EzOTBh",
-	tagKey,
-	{
-		component: {
-			cover: false,
-			tag: true,
-			popup: true,
-		},
-	}
-);
-
-viewer.setFilter(["==", "fullPano", true]);
+initMap();
+initViewer();
 
 
-// Retrieve tag component
-var tagComponent = viewer.getComponent("tag");
-var popupComponent = viewer.getComponent("popup");
+function initViewer(){
+	var tagKey = 'S0x2iwuJnH2Gj8ONzhvcrQ';
 
-// Create an outline tag showing a polygon with default options
-
-
-
-
-// Add tags when the related node is shown, otherwise remove them.
-viewer.on(Mapillary.Viewer.nodechanged, function(node) {
+	viewer = new Mapillary.Viewer(
+		"mly",
+		"NEh3V0ZjaE1fT1Nkdk9jMnJlSGNQQTowYjljOTA5MWI0N2EzOTBh",
+		null,
+		{
+			component: {
+				cover: false,
+				tag: true,
+				popup: true,
+			},
+		}
+	);
 	
-	node_latlon = node.latLon;
-	node_ca = node.ca;
-	
-	//document.getElementById("node").innerText = JSON.stringify(node_latlon, null, 2) + JSON.stringify(node_ca, null, 2);
-	console.log("nodechanged");
-	viewer.getComponent("tag").removeAll();
-	viewer.getComponent("popup").removeAll();
-	if (overpassjson){
-		drawOSMdata(overpassjson);
-	}
-	if (specialjson){
-		drawSpecialNode(specialjson);
-	}
-	//drawGrid();
-	
-});
+	viewer.setFilter(["==", "fullPano", true]);
 
-window.addEventListener("resize", function() { viewer.resize(); });
+
+	viewer.on(Mapillary.Viewer.nodechanged, function(node) {
+		
+		node_latlon = node.latLon;
+		node_ca = node.ca;
+		
+		viewer_marker.setLatLng([node_latlon.lat, node_latlon.lon]);
+
+		console.log("nodechanged");
+		viewer.getComponent("tag").removeAll();
+		viewer.getComponent("popup").removeAll();
+		if (overpassjson){
+			drawOSMdata(overpassjson);
+		}
+		if (specialjson){
+			drawSpecialNode(specialjson);
+		}
+		//drawGrid();
+
+	});
+	
+	window.addEventListener("resize", function() { viewer.resize(); });
+
+	//move to map center
+	const center = map.getCenter();
+	viewer.moveCloseTo(center.lat, center.lng);
+
+}
+
 
 function openButton(){
 	const key = document.getElementById("photokey").value;
@@ -227,7 +233,7 @@ function addNodes(nodes){
 		if (xy.osm.tags.name){
 
 			
-			div.innerHTML = divContent(xy.osm);
+			div.innerHTML = divContent(xy.osm, "amenity");
 			div.className = "tooltip1";
 			//遠い店舗は文字を小さく
 			const fontsize = Math.min(14, Math.round(12*25/xy.distance));
@@ -246,10 +252,10 @@ function addNodes(nodes){
 	window.addEventListener("resize", function() { viewer.resize(); });
 }
 
-function divContent(osm){
+function divContent(osm, pclass = ""){
 	let content;
 	const tooltip = tooltipContent(osm);
-	content = `<p><a target="_blank" href="https://www.openstreetmap.org/node/${osm.id}">${osm.tags.name}</a></p>
+	content = `<p class="${pclass}"><a target="_blank" href="https://www.openstreetmap.org/node/${osm.id}">${osm.tags.name}</a></p>
 	<div class="description1">${tooltip}</div>`;
 	return content;
 
@@ -475,9 +481,9 @@ function drawSpecialNode(json){
 
 	const div = document.createElement('div');
 		
-	div.innerHTML = divContent(object);
+	div.innerHTML = divContent(object, "specialnode");
 	div.className = "tooltip1";
-	div.color = "#red";
+	div.color = "#ff0000";
 	const popup = new Mapillary.PopupComponent.Popup();
 	popup.setDOMContent(div);
 	//遠い店舗は上のほうに表示
@@ -509,4 +515,66 @@ function rad(deg){
 
 function deg(rad){
 	return rad/Math.PI*180;
+}
+
+function initMap() {
+//地図を表示するdiv要素のidを設定
+	map = L.map('mapcontainer');
+
+//表示するタイルレイヤのURLとAttributionコントロールの記述を設定して、地図に追加する
+const osmLayer = L.tileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+	attribution: "(C)<a href='https://www.openstreetmap.org/copyright' target='_blank'>OpenStreetMap contributors</a>",
+	maxZoom: 21,
+	maxNativeZoom: 19,
+	minZoom: 1,
+	//maxBounds: [[35.47, 139.62], [35.45, 139.64]],
+}).addTo(map);
+const kokudoLayer = L.tileLayer('https://cyberjapandata.gsi.go.jp/xyz/seamlessphoto/{z}/{x}/{y}.jpg',{
+  attribution: '© <a href="https://maps.gsi.go.jp/development/ichiran.html">国土地理院</a>',
+  maxZoom: 21,
+  maxNativeZoom: 18,
+  minZoom: 14,
+  });
+  
+  const baseMap = {
+	  "OpenStreetMap":osmLayer,
+	  "国土地理院シームレス":kokudoLayer,
+  };
+
+  const mapillaryLayer = L.tileLayer('https://raster-tiles.mapillary.com/v0.1/{z}/{x}/{y}.png',{
+	  attribution: '(C)<a href="https://www.mapillary.com/">Mapillary</a>, CC BY',
+	maxZoom: 21,
+	maxNativeZoom: 17,
+  });
+  mapillaryLayer.setOpacity(0.65);
+  const overlayLayer = {
+	  "Mapillary":mapillaryLayer,
+  }
+
+  //レイヤ設定
+  const layerControl = L.control.layers(baseMap,overlayLayer,{"collapsed":true,});
+  layerControl.addTo(map);
+	  
+  viewer_marker = L.marker([0,0], { draggable: false }).addTo(map);
+
+  	
+	var hash = new L.Hash(map);
+
+	//URLに座標が付いていたらその場所を初期位置にする。
+	const url = location.href;
+	const match = url.match(/#(\d{1,2})\/(-?\d[0-9.]*)\/(-?\d[0-9.]*)/);
+	if (match){
+		const [, zoom, lat, lon] = match;
+		map.setView([lat, lon], zoom);
+	} else {
+		map.setView([37.9243912, 139.045191], 15);
+	}
+	
+
+}
+
+function goMapCenterButton(){
+	const center = map.getCenter();
+	viewer.moveCloseTo(center.lat, center.lng);
+
 }

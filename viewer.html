@@ -7,14 +7,26 @@
 
     <script src='https://unpkg.com/mapillary-js@2.20.0/dist/mapillary.min.js'></script>
     <link href='https://unpkg.com/mapillary-js@2.20.0/dist/mapillary.min.css' rel='stylesheet' />
-
+	<link rel="stylesheet" href="https://unpkg.com/leaflet@1.3.1/dist/leaflet.css">
+    <script src="https://unpkg.com/leaflet@1.3.1/dist/leaflet.js"></script>
+    
     <style>
         html, body { margin: 0; padding: 0; height: 100%; }
         #mly { 	height: 100%; }
         #textinformation {text-align: right;position:fixed; top:10px; left:10px; background-color: white; padding: 3px}
 		#nav {padding: 3px}
 		#attributions {font-size: x-small; background-color: #ddd; padding: 3px}
-        
+
+#mapcontainer {
+	width: 300px;
+	height: 200px;
+
+
+}
+#mapcontrol {
+    position: fixed;
+    top: 10px; right: 10px;
+}
         
 /* https://www.jungleocean.com/demo/tooltip-css/ */
 .tooltip1{
@@ -28,6 +40,11 @@
 }
 .tooltip1 p a{
     color:#000;
+    text-decoration: none;
+}
+
+.tooltip1 p.specialnode a{
+    color:#f00;
     text-decoration: none;
 }
 .description1 {
@@ -48,6 +65,13 @@
     left: 10px;
 }
 
+.specialnode {
+
+}
+
+.amenity {
+
+}
 
     </style>
 </head>
@@ -61,14 +85,19 @@
             POI data: <a href="https://www.openstreetmap.org/copyright">(C)OpenStreetMap contributors</a></li><br/>
         </div>
         <div id='nav'>
-        Mapillary 360 photo key: <input type="text" class="" id="photokey" value="4joow9o-DaiqXy9iFpxblQ"><input type="button" class="" id="" value="Go" onclick="openButton()"><br />
         <input style="font-size: large" type="button" id="" value="Get OSM amenity data" onclick="getRoads()"><br />
         OSM URL: <input type="text" class="" id="osm_url" value="https://www.openstreetmap.org/way/5013364"><input type="button" class="" id="" value="Show object" onclick="openOSMButton()">
         </div>
     </div>
+    <div id="mapcontrol">
+        <div id='mapcontainer'></div>
+        <div style="text-align:right"><input type="button" class="" id="" value="Go map center" onclick="goMapCenterButton()"></div>
+    </div>
 
 	<pre><span id="data"></span></pre>
+    <script src="leaflet-hash.js"></script>
     <script src="viewer.js"></script>
     <script src="utils.js"></script>
+
 </body>
 </html>

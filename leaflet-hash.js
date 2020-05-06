@@ -1,3 +1,11 @@
+/*
+Copyright (c) 2013 Michael Lawrence Evans
+Released under the MIT license
+License: https://github.com/mlevans/leaflet-hash/blob/master/LICENSE.md
+Source: https://github.com/mlevans/leaflet-hash
+*/
+
+
 (function(window) {
 	var HAS_HASHCHANGE = (function() {
 		var doc_mode = window.documentMode;
