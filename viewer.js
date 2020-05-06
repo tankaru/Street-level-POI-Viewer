@@ -87,12 +87,22 @@ function getRoads(){
 	
 	const bbox = '(' + minlat + ',' + minlon + ',' + maxlat + ',' + maxlon + ')';
 	
+	const date_string = document.getElementById("osm_data_date").value;
+	let date_query_string="";
+	if (date_string != ""){
+		date_query_string = `[date:"${date_string}T00:00:00Z"]`;
+	}
+	
 
-	const query = 
-		'[out:json];(' /* + 'way["building"]' + bbox + ';'+*/ /*'way["highway"]' + bbox + ';'+ */ 
-		+ 'node["amenity"]' + bbox + ';'
-		+ 'node["shop"]' + bbox + ';'
-		+ ');(._;>;);out body;';
+	const query =
+	`[out:json]${date_query_string};
+	(
+		node["amenity"]${bbox};
+		node["shop"]${bbox};
+	);
+	(._;>;);
+	out body;`;
+	console.log(query);
 
 	const encoded_query = encodeURI(query);
 	
