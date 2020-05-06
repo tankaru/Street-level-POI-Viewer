@@ -11,8 +11,9 @@
     <style>
         html, body { margin: 0; padding: 0; height: 100%; }
         #mly { 	height: 100%; }
-		#nav {position:fixed; top:10px; left:10px; background-color: white; padding: 3px}
-		#attributions {font-size: small; position:fixed; top:10px; right:10px; background-color: #ddd; padding: 3px}
+        #textinformation {text-align: right;position:fixed; top:10px; left:10px; background-color: white; padding: 3px}
+		#nav {padding: 3px}
+		#attributions {font-size: x-small; background-color: #ddd; padding: 3px}
         
         
 /* https://www.jungleocean.com/demo/tooltip-css/ */
@@ -53,17 +54,21 @@
 <body>
 
     <div id='mly'></div>
-	<div id='nav'>
-	Mapillary 360 photo key: <input type="text" class="" id="photokey" value="CwHf7UoYFC0W_TKnEgB0Pg"><input type="button" class="" id="" value="Open" onclick="openButton()"><br />
-	<input style="font-size: large" type="button" id="" value="Get OSM amenity data" onclick="getRoads()">
-	</div>
-	<div id="attributions">
-Attributions<br/>
-Images from <a href="https://www.mapillary.com/">Mapillary</a></li><br/>
-POI data: <a href="https://www.openstreetmap.org/copyright">(C)OpenStreetMap contributors</a></li><br/>
+    <div id='textinformation'>
+        <div id="attributions">
+            Attributions<br/>
+            Images from <a href="https://www.mapillary.com/">Mapillary</a></li><br/>
+            POI data: <a href="https://www.openstreetmap.org/copyright">(C)OpenStreetMap contributors</a></li><br/>
+        </div>
+        <div id='nav'>
+        Mapillary 360 photo key: <input type="text" class="" id="photokey" value="iytq5HHzeDMGG-JNHL4D-w"><input type="button" class="" id="" value="Go" onclick="openButton()"><br />
+        <input style="font-size: large" type="button" id="" value="Get OSM amenity data" onclick="getRoads()"><br />
+        OSM URL: <input type="text" class="" id="osm_url" value="https://www.openstreetmap.org/way/5013364"><input type="button" class="" id="" value="Show object" onclick="openOSMButton()">
+        </div>
+    </div>
 
-	</div>
 	<pre><span id="data"></span></pre>
     <script src="viewer.js"></script>
+    <script src="utils.js"></script>
 </body>
 </html>

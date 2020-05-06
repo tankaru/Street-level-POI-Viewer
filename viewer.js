@@ -1,10 +1,12 @@
 let node_latlon;
 let node_ca;
 let overpassjson;
+let specialjson;
+
 const R = 6378100;	
 const height = 2.2;
 
-var tagKey = 'CwHf7UoYFC0W_TKnEgB0Pg';
+var tagKey = 'iytq5HHzeDMGG-JNHL4D-w';
 
 var viewer = new Mapillary.Viewer(
 	"mly",
@@ -41,6 +43,9 @@ viewer.on(Mapillary.Viewer.nodechanged, function(node) {
 	console.log("nodechanged");
 	if (overpassjson){
 		drawOSMdata(overpassjson);
+	}
+	if (specialjson){
+		drawSpecialNode(specialjson);
 	}
 	//drawGrid();
 	
@@ -145,7 +150,7 @@ function drawOSMdata(json){
 		buildings[i].nodes = getClosedWayNodes(buildings[i].nodes.slice(0,buildings[i].nodes.length-2));
 	}
 	*/
-	addWays(buildings, nodes, 0x00FF00, 1, "building");
+	//addWays(buildings, nodes, 0x00FF00, 1, "building");
 
 	//道路ウェイデータ格納
 	let highways = [];				
@@ -159,7 +164,7 @@ function drawOSMdata(json){
 		highways[i].nodes = getClosedWayNodes(highways[i].nodes);
 	}
 	//console.log("closedhighways", highways);
-	addWays(highways, nodes, 0x0000FF, 5, "highway");
+	//addWays(highways, nodes, 0x0000FF, 5, "highway");
 
 
 }
@@ -250,6 +255,7 @@ function divContent(osm){
 }
 
 function tooltipContent(osm){
+	console.log(JSON.stringify(osm, null, 1));
 	let tooltip_content = JSON.stringify(osm.tags, null, 1);
 
 	tooltip_content = tooltip_content.replace(/[{}"]/g, '').replace(/,/g, '').replace(/^\n/g,'');
@@ -391,4 +397,117 @@ function drawGrid(){
 
 	tagComponent.add(grids);				
 	window.addEventListener("resize", function() { viewer.resize(); });
+}
+
+function openOSMButton(){
+	const url = document.getElementById("osm_url").value;
+	if (match = url.match(/www\.openstreetmap\.org\/([a-z]*)\/([0-9]*)/)) {
+		const [, osm_type, osm_id] = match;
+		
+		const query = 
+		`[out:json];
+		(
+			${osm_type}(${osm_id});
+		);
+		(._;>;);
+		out body;`;
+
+	const encoded_query = encodeURI(query);
+	
+	const url = 'https://overpass-api.de/api/interpreter?data=' + encoded_query;
+	
+	let request = new XMLHttpRequest();
+	request.open('GET', url , true);
+	request.onload = function () {
+	
+		data = this.response;
+		specialjson = JSON.parse(data);
+		drawSpecialNode(specialjson);
+		//drawGrid();
+	}
+	request.send();
+
+	}
+}
+
+function drawSpecialNode(json){
+	viewer.getComponent("tag").removeAll();
+	viewer.getComponent("popup").removeAll();
+
+	const popupComponent = viewer.getComponent('popup');
+	console.log(JSON.stringify(json, null, 1));
+	//nodeの平均値をとる
+	let node_list = [];
+	let lat_sum=0;
+	let lon_sum=0;
+	let node_count=0;
+	const osm_elements = json.elements;
+	for (let i=0; i<osm_elements.length; i++){
+		const item = osm_elements[i];
+		if(item.type=="node"){
+			node_list.push(item);
+			node_count++;
+			lat_sum += item.lat;
+			lon_sum += item.lon;
+		}
+	}
+	const lat_av = lat_sum/node_count;
+	const lon_av = lon_sum/node_count;
+
+	//nameを取得する
+	let object;
+	for (let i=0; i<osm_elements.length; i++){
+		const item = osm_elements[i];
+		if(item.tags){
+			if(item.tags.name){
+				object = item;
+			}
+		}
+	}	
+
+	const [distance, phi] = getDistancePhi(node_latlon, {lat:lat_av, lon:lon_av});
+	const x = ((phi - node_ca + 180) % 360 + 360) /360;
+
+	console.log("phi", phi, "ca", node_ca);
+
+
+
+	//ポップアップを作成
+
+	const div = document.createElement('div');
+		
+	div.innerHTML = divContent(object);
+	div.className = "tooltip1";
+	div.color = "#red";
+	const popup = new Mapillary.PopupComponent.Popup();
+	popup.setDOMContent(div);
+	//遠い店舗は上のほうに表示
+	popup.setBasicPoint([x, 0.4]);
+	popupComponent.add([popup]);
+	
+	window.addEventListener("resize", function() { viewer.resize(); });
+}
+
+//2点間の距離と方位角を計算
+//https://keisan.casio.jp/exec/system/1257670779
+function getDistancePhi(base, target){
+	const x1 = rad(base.lon);
+	const y1 = rad(base.lat);
+	const x2 = rad(target.lon);
+	const y2 = rad(target.lat);
+
+	const dx = x2 - x1;
+
+	const distance = R * Math.acos(Math.sin(y1)*Math.sin(y2) + Math.cos(y1)*Math.cos(y2)*Math.cos(dx));
+	const phi = 90 - deg(Math.atan2( Math.cos(y1)*Math.tan(y2) - Math.sin(y1)*Math.cos(dx), Math.sin(dx)));
+
+	return [distance, phi];
+}
+
+function rad(deg){
+	return deg/180*Math.PI;
+}
+
+function deg(rad){
+	return rad/Math.PI*180;
 }
