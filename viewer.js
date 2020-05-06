@@ -6,7 +6,7 @@ let specialjson;
 const R = 6378100;	
 const height = 2.2;
 
-var tagKey = 'iytq5HHzeDMGG-JNHL4D-w';
+var tagKey = 'S0x2iwuJnH2Gj8ONzhvcrQ';
 
 var viewer = new Mapillary.Viewer(
 	"mly",
@@ -41,6 +41,8 @@ viewer.on(Mapillary.Viewer.nodechanged, function(node) {
 	
 	//document.getElementById("node").innerText = JSON.stringify(node_latlon, null, 2) + JSON.stringify(node_ca, null, 2);
 	console.log("nodechanged");
+	viewer.getComponent("tag").removeAll();
+	viewer.getComponent("popup").removeAll();
 	if (overpassjson){
 		drawOSMdata(overpassjson);
 	}
@@ -107,8 +109,7 @@ function getRoads(){
 
 function drawOSMdata(json){
 
-	viewer.getComponent("tag").removeAll();
-	viewer.getComponent("popup").removeAll();
+
 
 
 	//document.getElementById("data").innerText = JSON.stringify(json, null, 2);	
@@ -163,7 +164,7 @@ function drawOSMdata(json){
 	for (let i=0; i<highways.length; i++){
 		highways[i].nodes = getClosedWayNodes(highways[i].nodes);
 	}
-	//console.log("closedhighways", highways);
+
 	//addWays(highways, nodes, 0x0000FF, 5, "highway");
 
 
@@ -255,7 +256,7 @@ function divContent(osm){
 }
 
 function tooltipContent(osm){
-	console.log(JSON.stringify(osm, null, 1));
+
 	let tooltip_content = JSON.stringify(osm.tags, null, 1);
 
 	tooltip_content = tooltip_content.replace(/[{}"]/g, '').replace(/,/g, '').replace(/^\n/g,'');
@@ -276,7 +277,7 @@ function addWays(ways, nodes, color, width, name){
 			const target = nodes.find((node) => {return (node.id == way.nodes[j])});
 			way_latlons.push({lat:target.lat, lon:target.lon, node_id: target.id});
 		}
-		//console.log(way_latlons);
+
 		way_latlons = getDetailedLatlons(way_latlons, 10);
 		//ウェイのxyデータを作成
 		let way_xys = [];
@@ -287,7 +288,7 @@ function addWays(ways, nodes, color, width, name){
 		//way_xys.push(way_xys[0]);
 
 		way_xys = getWaysDividedByZeroLine(way_xys);
-		console.log(way_xys);
+
 		const polygonGeometry = new Mapillary.TagComponent.PolygonGeometry(way_xys);
 			const polygonTag = new Mapillary.TagComponent.OutlineTag(name + i, polygonGeometry, {lineColor: color, lineWidth: width, text: name + i});
 			way_polygons.push(polygonTag);
@@ -365,7 +366,7 @@ function getXY(base, target, height, bearing){
 }
 
 function closeLine(line){
-	//console.log(line);
+
 	let newline = line;
 	for (let i=0;i<line.length; i++){
 		newline.push(line[line.length - i]);
@@ -431,11 +432,10 @@ function openOSMButton(){
 }
 
 function drawSpecialNode(json){
-	viewer.getComponent("tag").removeAll();
-	viewer.getComponent("popup").removeAll();
+
 
 	const popupComponent = viewer.getComponent('popup');
-	console.log(JSON.stringify(json, null, 1));
+
 	//nodeの平均値をとる
 	let node_list = [];
 	let lat_sum=0;
@@ -468,7 +468,6 @@ function drawSpecialNode(json){
 	const [distance, phi] = getDistancePhi(node_latlon, {lat:lat_av, lon:lon_av});
 	const x = ((phi - node_ca + 180) % 360 + 360) /360;
 
-	console.log("phi", phi, "ca", node_ca);
 
 
 
