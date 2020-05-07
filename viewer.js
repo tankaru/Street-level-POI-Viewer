@@ -577,7 +577,7 @@ const kokudoLayer = L.tileLayer('https://cyberjapandata.gsi.go.jp/xyz/seamlessph
 		const [, zoom, lat, lon] = match;
 		map.setView([lat, lon], zoom);
 	} else {
-		map.setView([37.9243912, 139.045191], 15);
+		map.setView([52.1564626, 5.389414243], 16);
 	}
 	
 
