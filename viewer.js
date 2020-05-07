@@ -40,14 +40,7 @@ function initViewer(){
 		viewer_marker.setLatLng([node_latlon.lat, node_latlon.lon]);
 
 		console.log("nodechanged");
-		viewer.getComponent("tag").removeAll();
-		viewer.getComponent("popup").removeAll();
-		if (overpassjson){
-			drawOSMdata(overpassjson);
-		}
-		if (specialjson){
-			drawSpecialNode(specialjson);
-		}
+		redrawNodes();
 		//drawGrid();
 
 	});
@@ -60,6 +53,16 @@ function initViewer(){
 
 }
 
+function redrawNodes(){
+	viewer.getComponent("tag").removeAll();
+	viewer.getComponent("popup").removeAll();
+	if (overpassjson){
+		drawOSMdata(overpassjson);
+	}
+	if (specialjson){
+		drawSpecialNode(specialjson);
+	}
+}
 
 function openButton(){
 	const key = document.getElementById("photokey").value;
@@ -71,22 +74,15 @@ function getRoads(){
 	const lat = node_latlon.lat;
 	const lon = node_latlon.lon;
 	
-	const bbox_width = 100; //m
-	const bbox_height = 100; //m
+	const radius = 50; //m
+	const search_area = `(around:${radius},${lat},${lon})`;
+
 	
-	
-	const dlat = Math.asin(bbox_height/R) * 180 / Math.PI;
-	const dlon = Math.asin(bbox_width/(R * Math.cos(lat * Math.PI / 180))) * 180 / Math.PI;
-	
-	
-	
-	const minlat = lat - dlat/2;
-	const maxlat = lat + dlat/2;
-	const minlon = lon - dlon/2;
-	const maxlon = lon + dlon/2;
-	
-	const bbox = '(' + minlat + ',' + minlon + ',' + maxlat + ',' + maxlon + ')';
-	
+	const overpass_search = document.getElementById("overpass_search").value;
+	let overpass_search_string='"amenity"';
+	if (overpass_search != ""){
+		overpass_search_string = `${overpass_search}`;
+	}
 	const date_string = document.getElementById("osm_data_date").value;
 	let date_query_string="";
 	if (date_string != ""){
@@ -97,8 +93,7 @@ function getRoads(){
 	const query =
 	`[out:json]${date_query_string};
 	(
-		node["amenity"]${bbox};
-		node["shop"]${bbox};
+		node[${overpass_search_string}]${search_area};
 	);
 	(._;>;);
 	out body;`;
@@ -114,6 +109,8 @@ function getRoads(){
 	
 		data = this.response;
 		overpassjson = JSON.parse(data);
+		console.log(JSON.stringify(overpassjson));
+		redrawNodes();
 		drawOSMdata(overpassjson)
 		//drawGrid();
 	}
@@ -223,7 +220,8 @@ function getClosedWayNodes(way_nodes){
 
 function addNodes(nodes){
 	const popupComponent = viewer.getComponent('popup');
-	
+
+
 	//xy座標系に変換
 	let node_xys = [];
 	for (let j = 0; j < nodes.length; j++){	
@@ -243,7 +241,7 @@ function addNodes(nodes){
 		if (xy.osm.tags.name){
 
 			
-			div.innerHTML = divContent(xy.osm, "amenity");
+			div.innerHTML = divContent(xy.osm, `https://www.openstreetmap.org/node/${xy.osm.id}`,"amenity");
 			div.className = "tooltip1";
 			//遠い店舗は文字を小さく
 			const fontsize = Math.min(14, Math.round(12*25/xy.distance));
@@ -258,14 +256,15 @@ function addNodes(nodes){
 		}
 	}
 
+
 	
 	window.addEventListener("resize", function() { viewer.resize(); });
 }
 
-function divContent(osm, pclass = ""){
+function divContent(osm, href, pclass = ""){
 	let content;
 	const tooltip = tooltipContent(osm);
-	content = `<p class="${pclass}"><a target="_blank" href="https://www.openstreetmap.org/node/${osm.id}">${osm.tags.name}</a></p>
+	content = `<p class="${pclass}"><a target="_blank" href="${href}">${osm.tags.name}</a></p>
 	<div class="description1">${tooltip}</div>`;
 	return content;
 
@@ -418,6 +417,7 @@ function drawGrid(){
 
 function openOSMButton(){
 	const url = document.getElementById("osm_url").value;
+	
 	if (match = url.match(/www\.openstreetmap\.org\/([a-z]*)\/([0-9]*)/)) {
 		const [, osm_type, osm_id] = match;
 		
@@ -439,10 +439,50 @@ function openOSMButton(){
 	
 		data = this.response;
 		specialjson = JSON.parse(data);
+		specialjson.href = `https://www.openstreetmap.org/node/${specialjson.elements[0].id}`;
 		drawSpecialNode(specialjson);
+		redrawNodes();
 		//drawGrid();
 	}
 	request.send();
+
+	}
+}
+
+function openWikimediaButton(){
+	const poi_string = document.getElementById("poi_string").value;
+	console.log("openWikimediaButton");
+	if (poi_string){
+		const encoded_query = encodeURI(poi_string);
+	
+		const url = 'https://en.wikipedia.org/w/api.php?origin=*&action=query&format=json&prop=coordinates&titles=' + encoded_query;
+		console.log(url);			
+		let request = new XMLHttpRequest();
+
+		request.open('GET', url , true);
+		//request.setRequestHeader("Origin", "*");
+		request.onload = function () {
+		
+			data = this.response;
+			json = JSON.parse(data);
+
+			console.log(JSON.stringify(json));
+
+			const pages = json.query.pages;
+			const page = Object.keys(pages)[0];
+			const name = pages[page].title;
+			const coordinates = pages[page].coordinates[0];
+
+			const element = {type:"node", lat:coordinates.lat, lon:coordinates.lon, tags: {name:name}};
+			specialjson = {elements:[element]};
+			console.log(JSON.stringify(specialjson));
+			specialjson.href = `https://en.wikipedia.org/wiki/${name}`;
+
+			drawSpecialNode(specialjson);
+			redrawNodes();
+			//drawGrid();
+		}
+		request.send();
 
 	}
 }
@@ -491,7 +531,7 @@ function drawSpecialNode(json){
 
 	const div = document.createElement('div');
 		
-	div.innerHTML = divContent(object, "specialnode");
+	div.innerHTML = divContent(object, json.href, "specialnode");
 	div.className = "tooltip1";
 	div.color = "#ff0000";
 	const popup = new Mapillary.PopupComponent.Popup();

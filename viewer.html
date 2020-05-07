@@ -18,12 +18,11 @@
 		#attributions {font-size: x-small; background-color: #ddd; padding: 3px}
 
 #mapcontainer {
-	width: 300px;
+    width: 300px;
 	height: 200px;
-
-
 }
 #mapcontrol {
+
     position: fixed;
     top: 10px; right: 10px;
 }
@@ -81,14 +80,14 @@
     <div id='textinformation'>
         <div id="attributions">
             Attributions<br/>
-            Images from <a href="https://www.mapillary.com/">Mapillary</a></li><br/>
-            POI data: <a href="https://www.openstreetmap.org/copyright">(C)OpenStreetMap contributors</a></li><br/>
+            Images from <a href="https://www.mapillary.com/">Mapillary</a><br/>
+            POI data: <a href="https://www.openstreetmap.org/copyright">(C)OpenStreetMap contributors</a>, <a href="https://en.wikipedia.org/wiki/Main_Page">Wikipedia</a><br/>
         </div>
         <div id='nav'>
             (Option) Historic data: <input type="date" id="osm_data_date" value=""><br/>
-            <input style="font-size: large" type="button" id="" value="Get OSM amenity data" onclick="getRoads()"><br />
-        OSM URL: <input type="text" class="" id="osm_url" value="https://www.openstreetmap.org/way/5013364"><input type="button" class="" id="" value="Show object" onclick="openOSMButton()">
-        
+            <input type="text" class="" id="overpass_search" value="amenity"><input style="font-size: large" type="button" id="" value="Get OSM data" onclick="getRoads()"><br />
+        <!-- OSM URL: <input type="text" class="" id="osm_url" value="https://www.openstreetmap.org/way/5013364"><input type="button" class="" id="" value="Show object" onclick="openOSMButton()"><br/> -->
+        POI name: <input type="text" class="" id="poi_string" value="Eiffel Tower"><input type="button" class="" id="" value="Show object" onclick="openWikimediaButton()">       
         </div>
     </div>
     <div id="mapcontrol">
