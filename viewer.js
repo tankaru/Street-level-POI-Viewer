@@ -2,6 +2,7 @@ let node_latlon;
 let node_ca;
 let overpassjson;
 let specialjson;
+let wikipediajson;
 let map;
 let viewer;
 let viewer_marker;
@@ -69,6 +70,9 @@ function redrawNodes(){
 	if (specialjson){
 		drawSpecialNode(specialjson);
 	}
+	if (wikipediajson){
+		drawWikipediaNodes(wikipediajson);
+	}	
 }
 
 function openButton(){
@@ -76,7 +80,7 @@ function openButton(){
 	viewer.moveToKey(key);
 }
 
-function getRoads(){
+function buttonOverpass(){
 	
 	const lat = node_latlon.lat;
 	const lon = node_latlon.lon;
@@ -125,6 +129,10 @@ function getRoads(){
 
 
 	
+}
+
+function drawWikipediaNodes(json){
+	addWikipediaNodes(json.elements);
 }
 
 function drawOSMdata(json){
@@ -247,8 +255,7 @@ function addNodes(nodes){
 		const div = document.createElement('div');
 		if (xy.osm.tags.name){
 
-			
-			div.innerHTML = divContent(xy.osm, `https://www.openstreetmap.org/node/${xy.osm.id}`,"amenity");
+			div.innerHTML = divContent(xy.osm, `https://www.openstreetmap.org/node/${xy.osm.id}`, xy.osm.tags.name,"amenity");
 			div.className = "tooltip1";
 			//遠い店舗は文字を小さく
 			const fontsize = Math.min(14, Math.round(12*25/xy.distance));
@@ -268,10 +275,59 @@ function addNodes(nodes){
 	window.addEventListener("resize", function() { viewer.resize(); });
 }
 
-function divContent(osm, href, pclass = ""){
+
+function addWikipediaNodes(nodes){
+	console.log("addWikipediaNodes", JSON.stringify(nodes));
+	const popupComponent = viewer.getComponent('popup');
+
+
+	//xy座標系に変換
+	let node_xys = [];
+	for (let j = 0; j < nodes.length; j++){	
+		const xy = getXY(node_latlon, nodes[j], height, node_ca);
+		node_xys.push(xy);
+	}
+	//カメラからの距離でソート
+	node_xys.sort((a,b) => {
+		if (a.distance > b.distance) return -1;
+		if (a.distance < b.distance) return 1;
+		return 0;
+	});
+
+	console.log("node xys", JSON.stringify(node_xys));
+
+	for (let j = 0; j < node_xys.length; j++){
+		//ポップアップを作成
+		let xy = Object.create(node_xys[j]);
+		const div = document.createElement('div');
+		const title = xy.osm.tags.name;
+		if (title){
+			
+			div.innerHTML = divContent(xy.osm, `https://en.wikipedia.org/wiki/${title}`, `${title}<br>${Math.round(xy.distance).toLocaleString()} m`,"wikipedia");
+			div.className = "tooltip1";
+			//遠い店舗は文字を小さく
+			const fontsize = Math.min(14, Math.round(12*1000/2/xy.distance));
+			div.style.fontSize = fontsize + "pt";
+			div.style.padding = "2";
+			const popup = new Mapillary.PopupComponent.Popup();
+			popup.setDOMContent(div);
+			//遠い店舗は上のほうに表示
+			popup.setBasicPoint([xy.x, -0.1 +  xy.y - 0.05*(xy.distance/1000)]);
+			popupComponent.add([popup]);
+
+		}
+	}
+
+
+	
+	window.addEventListener("resize", function() { viewer.resize(); });
+}
+
+
+function divContent(osm, href, text, pclass = ""){
 	let content;
 	const tooltip = tooltipContent(osm);
-	content = `<p class="${pclass}"><a target="_blank" href="${href}">${osm.tags.name}</a></p>
+	content = `<p class="${pclass}"><a target="_blank" href="${href}">${text}</a></p>
 	<div class="description1">${tooltip}</div>`;
 	return content;
 
@@ -422,43 +478,49 @@ function drawGrid(){
 	window.addEventListener("resize", function() { viewer.resize(); });
 }
 
-function openOSMButton(){
-	const url = document.getElementById("osm_url").value;
+function buttonWikipedia(){
 	
-	if (match = url.match(/www\.openstreetmap\.org\/([a-z]*)\/([0-9]*)/)) {
-		const [, osm_type, osm_id] = match;
-		
-		const query = 
-		`[out:json];
-		(
-			${osm_type}(${osm_id});
-		);
-		(._;>;);
-		out body;`;
-
-	const encoded_query = encodeURI(query);
-	
-	const url = 'https://overpass-api.de/api/interpreter?data=' + encoded_query;
-	
+	const url = `https://en.wikipedia.org/w/api.php?origin=*&action=query&format=json&list=geosearch&gscoord=${node_latlon.lat}%7C${node_latlon.lon}&gsradius=1000&gslimit=10`;
 	let request = new XMLHttpRequest();
+
 	request.open('GET', url , true);
+
 	request.onload = function () {
 	
 		data = this.response;
-		specialjson = JSON.parse(data);
-		specialjson.href = `https://www.openstreetmap.org/node/${specialjson.elements[0].id}`;
-		drawSpecialNode(specialjson);
+		json = JSON.parse(data);
+
+		console.log(JSON.stringify(json));
+		let elements = [];
+
+		for (let i=0; i<json.query.geosearch.length; i++){
+			const item = json.query.geosearch[i];
+			const name = item.title;
+			const lat = item.lat;
+			const lon = item.lon;
+
+			const [distance, phi] = getDistancePhi(node_latlon, {lat:lat, lon:lon});
+
+			const element = {type:"node", lat:lat, lon:lon, text: name, tags: {name:name}};
+			elements.push(element);
+
+		}
+		wikipediajson = {elements:elements};
+
+
+		drawWikipediaNodes(wikipediajson);
 		redrawNodes();
-		//drawGrid();
+
 	}
 	request.send();
 
-	}
 }
 
-function openWikimediaButton(){
+
+
+function buttonPOI(){
 	const poi_string = document.getElementById("poi_string").value;
-	console.log("openWikimediaButton");
+
 	if (poi_string){
 		const encoded_query = encodeURI(poi_string);
 	
@@ -482,7 +544,7 @@ function openWikimediaButton(){
 
 			const [distance, phi] = getDistancePhi(node_latlon, {lat:coordinates.lat, lon:coordinates.lon});
 
-			const element = {type:"node", lat:coordinates.lat, lon:coordinates.lon, tags: {name:name + "<br/>" + Math.round(distance).toLocaleString() + " m"}};
+			const element = {type:"node", lat:coordinates.lat, lon:coordinates.lon, tags: {name:name}};
 			specialjson = {elements:[element]};
 			console.log(JSON.stringify(specialjson));
 			specialjson.href = `https://en.wikipedia.org/wiki/${name}`;
@@ -525,7 +587,8 @@ function drawSpecialNode(json){
 		const item = osm_elements[i];
 		if(item.tags){
 			if(item.tags.name){
-				object = item;
+
+				object = Object.create(item);
 			}
 		}
 	}	
@@ -540,16 +603,21 @@ function drawSpecialNode(json){
 
 	const div = document.createElement('div');
 		
-	div.innerHTML = divContent(object, json.href, "specialnode");
+	div.innerHTML = divContent(object, json.href, `${object.tags.name}<br/>${Math.round(distance).toLocaleString()} m`,  "specialnode");
 	div.className = "tooltip1";
 	div.color = "#ff0000";
 	const popup = new Mapillary.PopupComponent.Popup();
 	popup.setDOMContent(div);
 	//遠い店舗は上のほうに表示
-	popup.setBasicPoint([x, 0.4]);
+	popup.setBasicPoint([x, 0.3]);
 	popupComponent.add([popup]);
 	
 	window.addEventListener("resize", function() { viewer.resize(); });
+}
+
+function buttonCloseAll(){
+	viewer.getComponent("tag").removeAll();
+	viewer.getComponent("popup").removeAll();
 }
 
 //2点間の距離と方位角を計算

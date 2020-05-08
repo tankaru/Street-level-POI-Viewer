@@ -27,8 +27,8 @@
     top: 10px; right: 10px;
 }
         
-.marker_icon {
-    transform: translate3d(147px, 99px, 0px).rotateX(-45deg);
+.wikipedia::before {
+    content: url(wikipedia.png);
 }
 
 /* https://www.jungleocean.com/demo/tooltip-css/ */
@@ -88,10 +88,11 @@
             POI data: <a href="https://www.openstreetmap.org/copyright">(C)OpenStreetMap contributors</a>, <a href="https://en.wikipedia.org/wiki/Main_Page">Wikipedia</a><br/>
         </div>
         <div id='nav'>
-            (Option) Historic data: <input type="date" id="osm_data_date" value=""><br/>
-            <input type="text" class="" id="overpass_search" value="amenity"><input style="font-size: large" type="button" id="" value="Get OSM data" onclick="getRoads()"><br />
-        <!-- OSM URL: <input type="text" class="" id="osm_url" value="https://www.openstreetmap.org/way/5013364"><input type="button" class="" id="" value="Show object" onclick="openOSMButton()"><br/> -->
-        POI name: <input type="text" class="" id="poi_string" value="Eiffel Tower"><input type="button" class="" id="" value="Show object" onclick="openWikimediaButton()">       
+            (Option) Historic data: <input type="date" id="osm_data_date" value="">
+            <br/><input type="text" class="" id="overpass_search" value="amenity"><input style="font-size: large" type="button" id="" value="Get OSM data" onclick="buttonOverpass()">
+            <br />POI name: <input type="text" class="" id="poi_string" value="Eiffel Tower"><input type="button" class="" id="" value="Show POI" onclick="buttonPOI()">       
+            <br/>Wikipedia: <input type="button" class="" id="" value="Show Wikipedia" onclick="buttonWikipedia()">   
+            <br/><input type="button" class="" id="" value="Close all" onclick="buttonCloseAll()">
         </div>
     </div>
     <div id="mapcontrol">
