@@ -43,8 +43,15 @@ function initViewer(){
 		redrawNodes();
 		//drawGrid();
 
+
 	});
-	
+	viewer.on(Mapillary.Viewer.povchanged, function(node) {
+
+		viewer.getPointOfView().then((pov) => {
+			viewer_marker.setRotationAngle(pov.bearing);
+		});
+		
+	});	
 	window.addEventListener("resize", function() { viewer.resize(); });
 
 	//move to map center
@@ -606,8 +613,18 @@ const kokudoLayer = L.tileLayer('https://cyberjapandata.gsi.go.jp/xyz/seamlessph
   //レイヤ設定
   const layerControl = L.control.layers(baseMap,overlayLayer,{"collapsed":true,});
   layerControl.addTo(map);
-	  
-  viewer_marker = L.marker([0,0], { draggable: false }).addTo(map);
+
+  const sampleIcon = L.icon({
+    iconUrl: 'icon.png',
+    iconRetinaUrl: 'icon.png',
+    iconSize: [50, 50],
+    iconAnchor: [25, 25],
+	popupAnchor: [25, -25],
+	className: "marker_icon",
+});
+
+  viewer_marker = L.marker([0,0], { icon: sampleIcon, rotationAngle: 45, draggable: false }).addTo(map);
+  
 
   	
 	var hash = new L.Hash(map);
