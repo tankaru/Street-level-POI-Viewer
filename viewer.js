@@ -473,7 +473,9 @@ function openWikimediaButton(){
 			const name = pages[page].title;
 			const coordinates = pages[page].coordinates[0];
 
-			const element = {type:"node", lat:coordinates.lat, lon:coordinates.lon, tags: {name:name}};
+			const [distance, phi] = getDistancePhi(node_latlon, {lat:coordinates.lat, lon:coordinates.lon});
+
+			const element = {type:"node", lat:coordinates.lat, lon:coordinates.lon, tags: {name:name + "<br/>" + Math.round(distance).toLocaleString() + " m"}};
 			specialjson = {elements:[element]};
 			console.log(JSON.stringify(specialjson));
 			specialjson.href = `https://en.wikipedia.org/wiki/${name}`;
