@@ -156,9 +156,9 @@ function buttonOverpass(){
 	(
 		node[${overpass_search_string}]${search_area};
 		way[${overpass_search_string}]${search_area};
+		relation[${overpass_search_string}]${search_area};
 	);
-	(._;>;);
-	out body;`;
+	out center;`;
 	console.log(query);
 
 	const encoded_query = encodeURI(query);
@@ -204,9 +204,9 @@ function convertNodesWaysToNodes(jsons){
 	let ways = [];
 	for (let i = 0; i<jsons.length; i++){
 		const item = jsons[i];
-		if (item.type == "way"){
+		if (item.type == "way" || item.type == "relation"){
 			let way = item;
-
+/*
 			let lat_sum = 0;
 			let lon_sum = 0;
 			let node_count = 0;
@@ -219,9 +219,9 @@ function convertNodesWaysToNodes(jsons){
 			}
 			const lat_av = lat_sum/node_count;
 			const lon_av = lon_sum/node_count;
-
-			way.lat = lat_av;
-			way.lon = lon_av;
+*/
+			way.lat = item.center.lat;
+			way.lon = item.center.lon;
 
 			ways.push(way);
 
