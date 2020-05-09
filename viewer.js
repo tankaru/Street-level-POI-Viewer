@@ -549,7 +549,7 @@ function buttonWikipedia(){
 
 			const [distance, phi] = getDistancePhi(node_latlon, {lat:lat, lon:lon});
 
-			const element = {type:"node", lat:lat, lon:lon, text: `<img src="${img}"> ${name}<br/>${Math.round(distance).toLocaleString()} m`, url: `https://en.wikipedia.org/wiki/${name}`, tags: {}};
+			const element = {type:"node", lat:lat, lon:lon, text: `<img class="thumbnail" src="${img}"><span class="label"> ${name}<br/>${Math.round(distance).toLocaleString()} m</span>`, url: `https://en.wikipedia.org/wiki/${name}`, tags: {}};
 			elements.push(element);
 
 		}
