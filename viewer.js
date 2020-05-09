@@ -89,8 +89,13 @@ function moveToCenter(){
 	request.onload = function () {
 	
 		data = this.response;
-		const json = JSON.parse(data);
 
+		const json = JSON.parse(data);
+		console.log("moveToCenter:", JSON.stringify(json, null, 2));
+		if (json.features.length < 1){
+			alert("No 360 photo here");
+			return;
+		}
 		const key = json.features[0].properties.key;
 
 		viewer.moveToKey(key);
