@@ -1,9 +1,9 @@
 let node_latlon;
 let node_ca;
 
-let overpassjson;
-let specialjson;
-let wikipediajson;
+let overpassjson = [];
+let specialjson = [];
+let wikipediajson = [];
 /*
 json = [{
 	type:
@@ -105,13 +105,13 @@ function moveToCenter(){
 function redrawNodes(){
 	viewer.getComponent("tag").removeAll();
 	viewer.getComponent("popup").removeAll();
-	if (overpassjson){
+	if (overpassjson.length>1){
 		drawOSMdata(overpassjson);
 	}
-	if (specialjson){
+	if (specialjson.length>1){
 		drawSpecialNode(specialjson);
 	}
-	if (wikipediajson){
+	if (wikipediajson.length>1){
 		drawWikipediaNodes(wikipediajson);
 	}	
 }
@@ -345,7 +345,13 @@ function addWikipediaNodes(nodes){
 		//ポップアップを作成
 		let xy = Object.create(node_xys[j]);
 		const div = document.createElement('div');
-			
+
+
+
+
+		const text = wikipadiaLabel(xy.osm.name, xy.osm.img, xy.distance);
+		xy.osm.text = text;
+
 		div.innerHTML = divContent(xy.osm,"wikipedia");
 		div.className = "tooltip1";
 		//遠い店舗は文字を小さく
@@ -369,7 +375,10 @@ function addWikipediaNodes(nodes){
 function divContent(json, pclass = ""){
 	let content;
 	let tooltip = "";
-	if (json.tags) tooltip = tooltipContent(json.tags);
+	let tags = "";
+	console.log(JSON.stringify(json));
+	if (json.tags) tags = json.tags;
+	tooltip = tooltipContent(tags);
 	content = `<p class="${pclass}"><a target="_blank" href="${json.url}">${json.text}</a></p>
 	<div class="description1">${tooltip}</div>`;
 	return content;
@@ -534,27 +543,31 @@ function buttonWikipedia(){
 		data = this.response;
 
 		const json = JSON.parse(data);
-		console.log(JSON.stringify(json, null, 2));
+
 
 		let elements = [];
 
 		for (const key in json.query.pages){
 
+
 			const item = json.query.pages[key];
 			const name = item.title;
 			const lat = item.coordinates[0].lat;
 			const lon = item.coordinates[0].lon;
-			let img = "wikipedia.png";
-			if (item.thumbnail) {if (item.thumbnail.source){img = item.thumbnail.source;}};
 
 			const [distance, phi] = getDistancePhi(node_latlon, {lat:lat, lon:lon});
 
-			const element = {type:"node", lat:lat, lon:lon, text: `<img class="thumbnail" src="${img}"><span class="label"> ${name}<br/>${Math.round(distance).toLocaleString()} m</span>`, url: `https://en.wikipedia.org/wiki/${name}`, tags: {}};
+			let img = "wikipedia.png";
+			if (item.thumbnail) {if (item.thumbnail.source){img = item.thumbnail.source;}};
+
+			const text = wikipadiaLabel(name, img, distance);
+
+			const element = {type:"node",name:name, img:img, lat:lat, lon:lon, text: text, url: `https://en.wikipedia.org/wiki/${name}`, tags: {}};
 			elements.push(element);
 
 		}
 		wikipediajson = elements;
-		console.log(JSON.stringify(wikipediajson, null, 2));
+		console.log(JSON.stringify(wikipediajson, null,2));
 
 		drawWikipediaNodes(wikipediajson);
 		redrawNodes();
@@ -564,7 +577,9 @@ function buttonWikipedia(){
 
 }
 
-
+function wikipadiaLabel(name, img, distance){
+	return `<img class="thumbnail" src="${img}"><span class="label"> ${name}<br/>${Math.round(distance).toLocaleString()} m</span>`;
+}
 
 function buttonPOI(){
 	const poi_string = document.getElementById("poi_string").value;
