@@ -368,8 +368,7 @@ function addWikipediaNodes(nodes){
 
 function divContent(json, pclass = ""){
 	let content;
-	let tooltip = "";
-	if (json.tags) tooltip = tooltipContent(json.tags);
+	const tooltip = tooltipContent(json.tags);
 	content = `<p class="${pclass}"><a target="_blank" href="${json.url}">${json.text}</a></p>
 	<div class="description1">${tooltip}</div>`;
 	return content;
@@ -523,8 +522,7 @@ function drawGrid(){
 
 function buttonWikipedia(){
 	
-	const url = `https://en.wikipedia.org/w/api.php?origin=*&format=json&action=query&generator=geosearch&prop=coordinates%7Cpageimages&ggscoord=${node_latlon.lat}%7C${node_latlon.lon}&ggsradius=1000&ggslimit=10`;
-	
+	const url = `https://en.wikipedia.org/w/api.php?origin=*&action=query&format=json&list=geosearch&gscoord=${node_latlon.lat}%7C${node_latlon.lon}&gsradius=1000&gslimit=10`;
 	let request = new XMLHttpRequest();
 
 	request.open('GET', url , true);
@@ -532,29 +530,24 @@ function buttonWikipedia(){
 	request.onload = function () {
 	
 		data = this.response;
-
 		const json = JSON.parse(data);
-		console.log(JSON.stringify(json, null, 2));
 
 		let elements = [];
 
-		for (const key in json.query.pages){
-
-			const item = json.query.pages[key];
+		for (let i=0; i<json.query.geosearch.length; i++){
+			const item = json.query.geosearch[i];
 			const name = item.title;
-			const lat = item.coordinates[0].lat;
-			const lon = item.coordinates[0].lon;
-			let img = "wikipedia.png";
-			if (item.thumbnail) {if (item.thumbnail.source){img = item.thumbnail.source;}};
+			const lat = item.lat;
+			const lon = item.lon;
 
 			const [distance, phi] = getDistancePhi(node_latlon, {lat:lat, lon:lon});
 
-			const element = {type:"node", lat:lat, lon:lon, text: `<img src="${img}"> ${name}<br/>${Math.round(distance).toLocaleString()} m`, url: `https://en.wikipedia.org/wiki/${name}`, tags: {}};
+			const element = {type:"node", lat:lat, lon:lon, text: `<img src="wikipedia.png"> ${name}<br/>${Math.round(distance).toLocaleString()} m`, url: `https://en.wikipedia.org/wiki/${name}`, tags: {}};
 			elements.push(element);
 
 		}
 		wikipediajson = elements;
-		console.log(JSON.stringify(wikipediajson, null, 2));
+
 
 		drawWikipediaNodes(wikipediajson);
 		redrawNodes();
