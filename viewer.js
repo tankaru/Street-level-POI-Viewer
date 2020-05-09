@@ -110,13 +110,13 @@ function moveToCenter(){
 function redrawNodes(){
 	viewer.getComponent("tag").removeAll();
 	viewer.getComponent("popup").removeAll();
-	if (overpassjson.length>1){
+	if (overpassjson.length>0){
 		drawOSMdata(overpassjson);
 	}
-	if (specialjson.length>1){
+	if (specialjson.length>0){
 		drawSpecialNode(specialjson);
 	}
-	if (wikipediajson.length>1){
+	if (wikipediajson.length>0){
 		drawWikipediaNodes(wikipediajson);
 	}	
 }
@@ -155,6 +155,7 @@ function buttonOverpass(){
 	`[out:json]${date_query_string};
 	(
 		node[${overpass_search_string}]${search_area};
+		way[${overpass_search_string}]${search_area};
 	);
 	(._;>;);
 	out body;`;
@@ -169,14 +170,15 @@ function buttonOverpass(){
 	request.onload = function () {
 	
 		data = this.response;
-		overpassjson = JSON.parse(data).elements;
+		overpassjson = convertNodesWaysToNodes(JSON.parse(data).elements);
 		for (let i=0; i<overpassjson.length; i++){
 			overpassjson[i].text = overpassjson[i].tags.name;
-			overpassjson[i].url = `https://www.openstreetmap.org/node/${overpassjson[i].id}`;
+			overpassjson[i].url = `https://www.openstreetmap.org/${overpassjson[i].type}/${overpassjson[i].id}`;
 		}
 		redrawNodes();
 		drawOSMdata(overpassjson)
 		//drawGrid();
+		console.log("buttonOverpass ", JSON.stringify(overpassjson, null, 2))
 	}
 	request.send();
 
@@ -184,70 +186,68 @@ function buttonOverpass(){
 	
 }
 
+function convertNodesWaysToNodes(jsons){
+
+	//nodeを集める
+	let nodes = [];
+	for (let i = 0; i<jsons.length; i++){
+		const item = jsons[i];
+		if (item.type == "node"){
+			nodes.push(item);
+		}
+	}
+
+	let node_objects = [];
+
+
+	//wayの座標を平均化して1点に
+	let ways = [];
+	for (let i = 0; i<jsons.length; i++){
+		const item = jsons[i];
+		if (item.type == "way"){
+			let way = item;
+
+			let lat_sum = 0;
+			let lon_sum = 0;
+			let node_count = 0;
+			for (let j = 0; j < way.nodes.length ;j++){
+				const target = nodes.find((node) => {return (node.id == way.nodes[j])});
+				lat_sum += target.lat;
+				lon_sum += target.lon;
+				node_count++;
+
+			}
+			const lat_av = lat_sum/node_count;
+			const lon_av = lon_sum/node_count;
+
+			way.lat = lat_av;
+			way.lon = lon_av;
+
+			ways.push(way);
+
+		}
+	}
+	const all_objects = nodes.concat(ways);
+	let named_objects = [];
+	for (let i=0; i<all_objects.length; i++){
+		const item = all_objects[i];
+		if(item.tags){
+			if(item.tags.name){
+				named_objects.push(item);
+			}
+		}
+	}
+	console.log("convertNodesWaysToNodes", JSON.stringify(named_objects))
+	return named_objects;
+}
+
 function drawWikipediaNodes(json){
 	addWikipediaNodes(json);
 }
 
 function drawOSMdata(json){
-
-
-
-
-	//document.getElementById("data").innerText = JSON.stringify(json, null, 2);	
 	
-	const nodes_and_ways = json;
-	
-	
-
-	let pointTags = [];
-	
-	
-
-	
-	//ノードデータ格納
-	let nodes = [];				
-	for (let i=0; i<nodes_and_ways.length; i++){
-		if (nodes_and_ways[i].type == "node") {
-			nodes.push(nodes_and_ways[i]);
-		}
-	}
-	//アメニティデータ格納
-	let amenities = [];				
-	for (let i=0; i<nodes_and_ways.length; i++){
-		if (nodes_and_ways[i].type == "node" && nodes_and_ways[i].tags) {
-			amenities.push(nodes_and_ways[i]);
-		}
-	}
-	addNodes(amenities);
-
-	//ビルウェイデータ格納
-	let buildings = [];				
-	for (let i=0; i<nodes_and_ways.length; i++){
-		if (nodes_and_ways[i].type == "way" && nodes_and_ways[i].tags.building) {
-			buildings.push(nodes_and_ways[i]);
-		}
-	};
-	/*
-	for (let i=0; i<buildings.length; i++){
-		buildings[i].nodes = getClosedWayNodes(buildings[i].nodes.slice(0,buildings[i].nodes.length-2));
-	}
-	*/
-	//addWays(buildings, nodes, 0x00FF00, 1, "building");
-
-	//道路ウェイデータ格納
-	let highways = [];				
-	for (let i=0; i<nodes_and_ways.length; i++){
-		if (nodes_and_ways[i].type == "way" && nodes_and_ways[i].tags.highway) {
-			highways.push(nodes_and_ways[i]);
-		}
-	}
-
-	for (let i=0; i<highways.length; i++){
-		highways[i].nodes = getClosedWayNodes(highways[i].nodes);
-	}
-
-	//addWays(highways, nodes, 0x0000FF, 5, "highway");
-
+	addNodes(json);
 
 }
 
@@ -652,7 +652,8 @@ function drawSpecialNode(json){
 		if(item.tags){
 			if(item.tags.name){
 
-				object = Object.create(item);
+				object = item;
+
 			}
 		}
 	}	
@@ -668,6 +669,7 @@ function drawSpecialNode(json){
 	const div = document.createElement('div');
 		
 	div.innerHTML = divContent(object,  "specialnode");
+
 	div.className = "tooltip1";
 	div.color = "#ff0000";
 	const popup = new Mapillary.PopupComponent.Popup();
@@ -675,7 +677,7 @@ function drawSpecialNode(json){
 	//遠い店舗は上のほうに表示
 	popup.setBasicPoint([x, 0.3]);
 	popupComponent.add([popup]);
-	
+	console.log(x, popup);
 	window.addEventListener("resize", function() { viewer.resize(); });
 }
 
