@@ -9,9 +9,11 @@ let viewer_marker;
 
 const R = 6378100;	
 const height = 2.2;
+const client_id = 'NEh3V0ZjaE1fT1Nkdk9jMnJlSGNQQTowYjljOTA5MWI0N2EzOTBh';
 
 initMap();
 initViewer();
+
 
 
 function initViewer(){
@@ -19,7 +21,7 @@ function initViewer(){
 
 	viewer = new Mapillary.Viewer(
 		"mly",
-		"NEh3V0ZjaE1fT1Nkdk9jMnJlSGNQQTowYjljOTA5MWI0N2EzOTBh",
+		client_id,
 		null,
 		{
 			component: {
@@ -44,6 +46,8 @@ function initViewer(){
 		redrawNodes();
 		//drawGrid();
 
+		map.panTo(node_latlon);
+
 
 	});
 	viewer.on(Mapillary.Viewer.povchanged, function(node) {
@@ -56,10 +60,32 @@ function initViewer(){
 	window.addEventListener("resize", function() { viewer.resize(); });
 
 	//move to map center
-	const center = map.getCenter();
-	viewer.moveCloseTo(center.lat, center.lng);
+	moveToCenter();
 
 }
+
+function moveToCenter(){
+	const center = map.getCenter();
+
+	const url = `https://a.mapillary.com/v3/images?client_id=${client_id}&closeto=${center.lng},${center.lat}&pano=true&radius=100&per_page=1`;
+	
+	let request = new XMLHttpRequest();
+	request.open('GET', url , true);
+	request.onload = function () {
+	
+		data = this.response;
+		json = JSON.parse(data);
+
+		const key = json.features[0].properties.key;
+
+		viewer.moveToKey(key);
+
+	}
+	request.send();
+
+
+}
+
 
 function redrawNodes(){
 	viewer.getComponent("tag").removeAll();
@@ -78,6 +104,10 @@ function redrawNodes(){
 function openButton(){
 	const key = document.getElementById("photokey").value;
 	viewer.moveToKey(key);
+}
+
+function normalizeLon(lon){
+	return ((lon + 180) % 360 + 360 ) % 360 - 180;
 }
 
 function buttonOverpass(){
@@ -120,7 +150,6 @@ function buttonOverpass(){
 	
 		data = this.response;
 		overpassjson = JSON.parse(data);
-		console.log(JSON.stringify(overpassjson));
 		redrawNodes();
 		drawOSMdata(overpassjson)
 		//drawGrid();
@@ -277,7 +306,6 @@ function addNodes(nodes){
 
 
 function addWikipediaNodes(nodes){
-	console.log("addWikipediaNodes", JSON.stringify(nodes));
 	const popupComponent = viewer.getComponent('popup');
 
 
@@ -293,8 +321,6 @@ function addWikipediaNodes(nodes){
 		if (a.distance < b.distance) return 1;
 		return 0;
 	});
-
-	console.log("node xys", JSON.stringify(node_xys));
 
 	for (let j = 0; j < node_xys.length; j++){
 		//ポップアップを作成
@@ -490,7 +516,6 @@ function buttonWikipedia(){
 		data = this.response;
 		json = JSON.parse(data);
 
-		console.log(JSON.stringify(json));
 		let elements = [];
 
 		for (let i=0; i<json.query.geosearch.length; i++){
@@ -535,8 +560,6 @@ function buttonPOI(){
 			data = this.response;
 			json = JSON.parse(data);
 
-			console.log(JSON.stringify(json));
-
 			const pages = json.query.pages;
 			const page = Object.keys(pages)[0];
 			const name = pages[page].title;
@@ -546,7 +569,6 @@ function buttonPOI(){
 
 			const element = {type:"node", lat:coordinates.lat, lon:coordinates.lon, tags: {name:name}};
 			specialjson = {elements:[element]};
-			console.log(JSON.stringify(specialjson));
 			specialjson.href = `https://en.wikipedia.org/wiki/${name}`;
 
 			drawSpecialNode(specialjson);
@@ -674,9 +696,12 @@ const kokudoLayer = L.tileLayer('https://cyberjapandata.gsi.go.jp/xyz/seamlessph
 	maxNativeZoom: 17,
   });
   mapillaryLayer.setOpacity(0.65);
-  const overlayLayer = {
-	  "Mapillary":mapillaryLayer,
-  }
+
+
+	const overlayLayer = {
+		"Mapillary":mapillaryLayer,
+
+	}
 
   //レイヤ設定
   const layerControl = L.control.layers(baseMap,overlayLayer,{"collapsed":true,});
@@ -710,8 +735,7 @@ const kokudoLayer = L.tileLayer('https://cyberjapandata.gsi.go.jp/xyz/seamlessph
 
 }
 
-function goMapCenterButton(){
-	const center = map.getCenter();
-	viewer.moveCloseTo(center.lat, center.lng);
+function buttonGoCenter(){
+	moveToCenter();
 
 }
