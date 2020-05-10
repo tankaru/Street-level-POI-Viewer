@@ -91,7 +91,7 @@ function moveToCenter(){
 		data = this.response;
 
 		const json = JSON.parse(data);
-		console.log("moveToCenter:", JSON.stringify(json, null, 2));
+
 		if (json.features.length < 1){
 			alert("No 360 photo here");
 			return;
@@ -159,12 +159,12 @@ function buttonOverpass(){
 		relation[${overpass_search_string}]${search_area};
 	);
 	out center;`;
-	console.log(query);
+
 
 	const encoded_query = encodeURI(query);
 	
 	const url = 'https://overpass-api.de/api/interpreter?data=' + encoded_query;
-	
+	console.log(url);
 	let request = new XMLHttpRequest();
 	request.open('GET', url , true);
 	request.onload = function () {
@@ -178,7 +178,7 @@ function buttonOverpass(){
 		redrawNodes();
 		drawOSMdata(overpassjson)
 		//drawGrid();
-		console.log("buttonOverpass ", JSON.stringify(overpassjson, null, 2))
+
 	}
 	request.send();
 
@@ -237,7 +237,7 @@ function convertNodesWaysToNodes(jsons){
 			}
 		}
 	}
-	console.log("convertNodesWaysToNodes", JSON.stringify(named_objects))
+
 	return named_objects;
 }
 
@@ -381,7 +381,7 @@ function divContent(json, pclass = ""){
 	let content;
 	let tooltip = "";
 	let tags = "";
-	console.log(JSON.stringify(json));
+
 	if (json.tags) tags = json.tags;
 	tooltip = tooltipContent(tags);
 	content = `<p class="${pclass}"><a target="_blank" href="${json.url}">${json.text}</a></p>
@@ -538,7 +538,8 @@ function drawGrid(){
 function buttonWikipedia(){
 	
 	const url = `https://en.wikipedia.org/w/api.php?origin=*&format=json&action=query&generator=geosearch&prop=coordinates%7Cpageimages&ggscoord=${node_latlon.lat}%7C${node_latlon.lon}&ggsradius=1000&ggslimit=10`;
-	
+	console.log(url);			
+
 	let request = new XMLHttpRequest();
 
 	request.open('GET', url , true);
@@ -572,7 +573,6 @@ function buttonWikipedia(){
 
 		}
 		wikipediajson = elements;
-		console.log(JSON.stringify(wikipediajson, null,2));
 
 		drawWikipediaNodes(wikipediajson);
 		redrawNodes();
@@ -677,7 +677,7 @@ function drawSpecialNode(json){
 	//遠い店舗は上のほうに表示
 	popup.setBasicPoint([x, 0.3]);
 	popupComponent.add([popup]);
-	console.log(x, popup);
+
 	window.addEventListener("resize", function() { viewer.resize(); });
 }
 
