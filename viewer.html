@@ -94,15 +94,15 @@
         </div>
         <div id='nav'>
             (Option) Historic data: <input type="date" id="osm_data_date" value="">
-            <br/><input type="text" class="" id="overpass_search" value="amenity"><input style="font-size: large" type="button" id="" value="Get OSM data" onclick="buttonOverpass()">
-            <br />POI name: <input type="text" class="" id="poi_string" value="Eiffel Tower"><input type="button" class="" id="" value="Show POI" onclick="buttonPOI()">       
+            <br/>OSM key: <input type="text" class="" id="overpass_search" value="amenity" size="15"><input type="button" id="" value="Show OSM" onclick="buttonOverpass()">
+            <br />POI name: <input type="text" class="" id="poi_string" value="Eiffel Tower" size="15"><input type="button" class="" id="" value="Show POI" onclick="buttonPOI()">       
             <br/>Wikipedia: <input type="button" class="" id="" value="Show Wikipedia" onclick="buttonWikipedia()">   
             <br/><input type="button" class="" id="" value="Close all" onclick="buttonCloseAll()">
         </div>
     </div>
     <div id="mapcontrol">
         <div id='mapcontainer'></div>
-        <div style="text-align:right"><input type="button" class="" id="" value="Go map center" onclick="buttonGoCenter()"></div>
+        <div style="text-align:right"><input type="button" class="" id="" value="Go to map center" onclick="buttonGoCenter()"></div>
     </div>
 
     <script src="leaflet.rotatedMarker.js"></script>

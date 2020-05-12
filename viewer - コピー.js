@@ -1,9 +1,9 @@
 let node_latlon;
 let node_ca;
 
-let overpassjson;
-let specialjson;
-let wikipediajson;
+let overpassjson = [];
+let specialjson = [];
+let wikipediajson = [];
 /*
 json = [{
 	type:
@@ -89,8 +89,13 @@ function moveToCenter(){
 	request.onload = function () {
 	
 		data = this.response;
+
 		const json = JSON.parse(data);
 
+		if (json.features.length < 1){
+			alert("No 360 photo here");
+			return;
+		}
 		const key = json.features[0].properties.key;
 
 		viewer.moveToKey(key);
@@ -105,13 +110,13 @@ function moveToCenter(){
 function redrawNodes(){
 	viewer.getComponent("tag").removeAll();
 	viewer.getComponent("popup").removeAll();
-	if (overpassjson){
+	if (overpassjson.length>0){
 		drawOSMdata(overpassjson);
 	}
-	if (specialjson){
+	if (specialjson.length>0){
 		drawSpecialNode(specialjson);
 	}
-	if (wikipediajson){
+	if (wikipediajson.length>0){
 		drawWikipediaNodes(wikipediajson);
 	}	
 }
@@ -150,28 +155,30 @@ function buttonOverpass(){
 	`[out:json]${date_query_string};
 	(
 		node[${overpass_search_string}]${search_area};
+		way[${overpass_search_string}]${search_area};
+		relation[${overpass_search_string}]${search_area};
 	);
-	(._;>;);
-	out body;`;
-	console.log(query);
+	out center;`;
+
 
 	const encoded_query = encodeURI(query);
 	
 	const url = 'https://overpass-api.de/api/interpreter?data=' + encoded_query;
-	
+	console.log(url);
 	let request = new XMLHttpRequest();
 	request.open('GET', url , true);
 	request.onload = function () {
 	
 		data = this.response;
-		overpassjson = JSON.parse(data).elements;
+		overpassjson = convertNodesWaysToNodes(JSON.parse(data).elements);
 		for (let i=0; i<overpassjson.length; i++){
 			overpassjson[i].text = overpassjson[i].tags.name;
-			overpassjson[i].url = `https://www.openstreetmap.org/node/${overpassjson[i].id}`;
+			overpassjson[i].url = `https://www.openstreetmap.org/${overpassjson[i].type}/${overpassjson[i].id}`;
 		}
 		redrawNodes();
 		drawOSMdata(overpassjson)
 		//drawGrid();
+
 	}
 	request.send();
 
@@ -179,70 +186,68 @@ function buttonOverpass(){
 	
 }
 
+function convertNodesWaysToNodes(jsons){
+
+	//nodeを集める
+	let nodes = [];
+	for (let i = 0; i<jsons.length; i++){
+		const item = jsons[i];
+		if (item.type == "node"){
+			nodes.push(item);
+		}
+	}
+
+	let node_objects = [];
+
+
+	//wayの座標を平均化して1点に
+	let ways = [];
+	for (let i = 0; i<jsons.length; i++){
+		const item = jsons[i];
+		if (item.type == "way" || item.type == "relation"){
+			let way = item;
+/*
+			let lat_sum = 0;
+			let lon_sum = 0;
+			let node_count = 0;
+			for (let j = 0; j < way.nodes.length ;j++){
+				const target = nodes.find((node) => {return (node.id == way.nodes[j])});
+				lat_sum += target.lat;
+				lon_sum += target.lon;
+				node_count++;
+
+			}
+			const lat_av = lat_sum/node_count;
+			const lon_av = lon_sum/node_count;
+*/
+			way.lat = item.center.lat;
+			way.lon = item.center.lon;
+
+			ways.push(way);
+
+		}
+	}
+	const all_objects = nodes.concat(ways);
+	let named_objects = [];
+	for (let i=0; i<all_objects.length; i++){
+		const item = all_objects[i];
+		if(item.tags){
+			if(item.tags.name){
+				named_objects.push(item);
+			}
+		}
+	}
+
+	return named_objects;
+}
+
 function drawWikipediaNodes(json){
 	addWikipediaNodes(json);
 }
 
 function drawOSMdata(json){
-
-
-
-
-	//document.getElementById("data").innerText = JSON.stringify(json, null, 2);	
 	
-	const nodes_and_ways = json;
-	
-	
-
-	let pointTags = [];
-	
-	
-
-	
-	//ノードデータ格納
-	let nodes = [];				
-	for (let i=0; i<nodes_and_ways.length; i++){
-		if (nodes_and_ways[i].type == "node") {
-			nodes.push(nodes_and_ways[i]);
-		}
-	}
-	//アメニティデータ格納
-	let amenities = [];				
-	for (let i=0; i<nodes_and_ways.length; i++){
-		if (nodes_and_ways[i].type == "node" && nodes_and_ways[i].tags) {
-			amenities.push(nodes_and_ways[i]);
-		}
-	}
-	addNodes(amenities);
-
-	//ビルウェイデータ格納
-	let buildings = [];				
-	for (let i=0; i<nodes_and_ways.length; i++){
-		if (nodes_and_ways[i].type == "way" && nodes_and_ways[i].tags.building) {
-			buildings.push(nodes_and_ways[i]);
-		}
-	};
-	/*
-	for (let i=0; i<buildings.length; i++){
-		buildings[i].nodes = getClosedWayNodes(buildings[i].nodes.slice(0,buildings[i].nodes.length-2));
-	}
-	*/
-	//addWays(buildings, nodes, 0x00FF00, 1, "building");
-
-	//道路ウェイデータ格納
-	let highways = [];				
-	for (let i=0; i<nodes_and_ways.length; i++){
-		if (nodes_and_ways[i].type == "way" && nodes_and_ways[i].tags.highway) {
-			highways.push(nodes_and_ways[i]);
-		}
-	}
-
-	for (let i=0; i<highways.length; i++){
-		highways[i].nodes = getClosedWayNodes(highways[i].nodes);
-	}
-
-	//addWays(highways, nodes, 0x0000FF, 5, "highway");
-
+	addNodes(json);
 
 }
 
@@ -345,7 +350,13 @@ function addWikipediaNodes(nodes){
 		//ポップアップを作成
 		let xy = Object.create(node_xys[j]);
 		const div = document.createElement('div');
-			
+
+
+
+
+		const text = wikipadiaLabel(xy.osm.name, xy.osm.img, xy.distance);
+		xy.osm.text = text;
+
 		div.innerHTML = divContent(xy.osm,"wikipedia");
 		div.className = "tooltip1";
 		//遠い店舗は文字を小さく
@@ -368,7 +379,11 @@ function addWikipediaNodes(nodes){
 
 function divContent(json, pclass = ""){
 	let content;
-	const tooltip = tooltipContent(json.tags);
+	let tooltip = "";
+	let tags = "";
+
+	if (json.tags) tags = json.tags;
+	tooltip = tooltipContent(tags);
 	content = `<p class="${pclass}"><a target="_blank" href="${json.url}">${json.text}</a></p>
 	<div class="description1">${tooltip}</div>`;
 	return content;
@@ -522,7 +537,9 @@ function drawGrid(){
 
 function buttonWikipedia(){
 	
-	const url = `https://en.wikipedia.org/w/api.php?origin=*&action=query&format=json&list=geosearch&gscoord=${node_latlon.lat}%7C${node_latlon.lon}&gsradius=1000&gslimit=10`;
+	const url = `https://en.wikipedia.org/w/api.php?origin=*&format=json&action=query&generator=geosearch&prop=coordinates%7Cpageimages&ggscoord=${node_latlon.lat}%7C${node_latlon.lon}&ggsradius=1000&ggslimit=10`;
+	console.log(url);			
+
 	let request = new XMLHttpRequest();
 
 	request.open('GET', url , true);
@@ -530,24 +547,32 @@ function buttonWikipedia(){
 	request.onload = function () {
 	
 		data = this.response;
+
 		const json = JSON.parse(data);
+
 
 		let elements = [];
 
-		for (let i=0; i<json.query.geosearch.length; i++){
-			const item = json.query.geosearch[i];
+		for (const key in json.query.pages){
+
+
+			const item = json.query.pages[key];
 			const name = item.title;
-			const lat = item.lat;
-			const lon = item.lon;
+			const lat = item.coordinates[0].lat;
+			const lon = item.coordinates[0].lon;
 
 			const [distance, phi] = getDistancePhi(node_latlon, {lat:lat, lon:lon});
 
-			const element = {type:"node", lat:lat, lon:lon, text: `<img src="wikipedia.png"> ${name}<br/>${Math.round(distance).toLocaleString()} m`, url: `https://en.wikipedia.org/wiki/${name}`, tags: {}};
+			let img = "wikipedia.png";
+			if (item.thumbnail) {if (item.thumbnail.source){img = item.thumbnail.source;}};
+
+			const text = wikipadiaLabel(name, img, distance);
+
+			const element = {type:"node",name:name, img:img, lat:lat, lon:lon, text: text, url: `https://en.wikipedia.org/wiki/${name}`, tags: {}};
 			elements.push(element);
 
 		}
 		wikipediajson = elements;
-
 
 		drawWikipediaNodes(wikipediajson);
 		redrawNodes();
@@ -557,7 +582,9 @@ function buttonWikipedia(){
 
 }
 
-
+function wikipadiaLabel(name, img, distance){
+	return `<img class="thumbnail" src="${img}"><span class="label"> ${name}<br/>${Math.round(distance).toLocaleString()} m</span>`;
+}
 
 function buttonPOI(){
 	const poi_string = document.getElementById("poi_string").value;
@@ -625,7 +652,8 @@ function drawSpecialNode(json){
 		if(item.tags){
 			if(item.tags.name){
 
-				object = Object.create(item);
+				object = item;
+
 			}
 		}
 	}	
@@ -641,6 +669,7 @@ function drawSpecialNode(json){
 	const div = document.createElement('div');
 		
 	div.innerHTML = divContent(object,  "specialnode");
+
 	div.className = "tooltip1";
 	div.color = "#ff0000";
 	const popup = new Mapillary.PopupComponent.Popup();
@@ -648,7 +677,7 @@ function drawSpecialNode(json){
 	//遠い店舗は上のほうに表示
 	popup.setBasicPoint([x, 0.3]);
 	popupComponent.add([popup]);
-	
+
 	window.addEventListener("resize", function() { viewer.resize(); });
 }
 

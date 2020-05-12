@@ -172,7 +172,7 @@ function buttonOverpass(){
 		data = this.response;
 		overpassjson = convertNodesWaysToNodes(JSON.parse(data).elements);
 		for (let i=0; i<overpassjson.length; i++){
-			overpassjson[i].text = overpassjson[i].tags.name;
+			overpassjson[i].text = tag2Img(overpassjson[i].tags) + overpassjson[i].tags.name;
 			overpassjson[i].url = `https://www.openstreetmap.org/${overpassjson[i].type}/${overpassjson[i].id}`;
 		}
 		redrawNodes();
@@ -184,6 +184,15 @@ function buttonOverpass(){
 
 
 	
+}
+
+function tag2Img(tags){
+	for (let key in tags){
+		if (key == "amenity" || key == "shop" || key == "tourism" || key == "leisure"){
+			return `<img src="maki/${tags[key]}-15.svg" alt="" />`;
+		}
+	}
+	return "";
 }
 
 function convertNodesWaysToNodes(jsons){
