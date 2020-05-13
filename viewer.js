@@ -130,8 +130,7 @@ function normalizeLon(lon){
 	return ((lon + 180) % 360 + 360 ) % 360 - 180;
 }
 
-function buttonOverpass(){
-	
+function storeOverpass(key_string){
 	const lat = node_latlon.lat;
 	const lon = node_latlon.lon;
 	
@@ -139,11 +138,6 @@ function buttonOverpass(){
 	const search_area = `(around:${radius},${lat},${lon})`;
 
 	
-	const overpass_search = document.getElementById("overpass_search").value;
-	let overpass_search_string='"amenity"';
-	if (overpass_search != ""){
-		overpass_search_string = `${overpass_search}`;
-	}
 	const date_string = document.getElementById("osm_data_date").value;
 	let date_query_string="";
 	if (date_string != ""){
@@ -154,9 +148,9 @@ function buttonOverpass(){
 	const query =
 	`[out:json]${date_query_string};
 	(
-		node[${overpass_search_string}]${search_area};
-		way[${overpass_search_string}]${search_area};
-		relation[${overpass_search_string}]${search_area};
+		node[${key_string}]${search_area};
+		way[${key_string}]${search_area};
+		relation[${key_string}]${search_area};
 	);
 	out center;`;
 
@@ -164,6 +158,8 @@ function buttonOverpass(){
 	const encoded_query = encodeURI(query);
 	
 	const url = 'https://overpass-api.de/api/interpreter?data=' + encoded_query;
+
+
 	console.log(url);
 	let request = new XMLHttpRequest();
 	request.open('GET', url , true);
@@ -182,7 +178,24 @@ function buttonOverpass(){
 	}
 	request.send();
 
+}
 
+function buttonOverpassName(){
+	
+	const osm_name = document.getElementById("osm_name").value;
+
+	const overpass_search_string = `"name"~"${osm_name}",i`;
+	console.log(overpass_search_string);
+	storeOverpass(overpass_search_string);
+	
+}
+
+function buttonOverpassKey(){
+
+	const osm_keys = document.getElementById('osm_keys');
+	const key = osm_keys[osm_keys.selectedIndex].value;
+
+	storeOverpass(key);
 	
 }
 

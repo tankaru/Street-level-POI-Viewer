@@ -93,8 +93,19 @@
             POI data: <a href="https://www.openstreetmap.org/copyright">(C)OpenStreetMap contributors</a>, <a href="https://en.wikipedia.org/wiki/Main_Page">Wikipedia</a><br/>
         </div>
         <div id='nav'>
+            <div id="advanced">
             (Option) Historic data: <input type="date" id="osm_data_date" value="">
-            <br/>OSM key: <input type="text" class="" id="overpass_search" value="amenity" size="15"><input type="button" id="" value="Show OSM" onclick="buttonOverpass()">
+            <br/>OSM name: <input type="text" class="" id="osm_name" value="Walmart" size="15"><input type="button" id="" value="Search" onclick="buttonOverpassName()">
+            </div>
+            OSM key:
+            <select id="osm_keys">
+                <option value="amenity">amenity</option>
+                <option value="shop">shop</option>
+                <option value="leisure">leisure</option>
+                <option value="historic">historic</option>
+                <option value="tourism">tourism</option>
+            </select>
+            <input type="button" value="Show OSM" onclick="buttonOverpassKey()">
             <br />POI name: <input type="text" class="" id="poi_string" value="Eiffel Tower" size="15"><input type="button" class="" id="" value="Show POI" onclick="buttonPOI()">       
             <br/>Wikipedia: <input type="button" class="" id="" value="Show Wikipedia" onclick="buttonWikipedia()">   
             <br/><input type="button" class="" id="" value="Close all" onclick="buttonCloseAll()">
