@@ -201,7 +201,7 @@ function buttonOverpassKey(){
 
 function tag2Img(tags){
 	for (let key in tags){
-		if (key == "amenity" || key == "shop" || key == "tourism" || key == "leisure"){
+		if (key == "amenity" || key == "shop" || key == "tourism" || key == "leisure" || key == "historic"){
 			return `<img src="maki/${tags[key]}-15.svg" alt="" />`;
 		}
 	}
