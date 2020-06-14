@@ -25,10 +25,21 @@ let viewer_marker;
 const R = 6378100;	
 const height = 2.2;
 const client_id = 'NEh3V0ZjaE1fT1Nkdk9jMnJlSGNQQTowYjljOTA5MWI0N2EzOTBh';
+const url_key = 'Streetlevel POI viewer, URL';
 
 initMap();
 initViewer();
 
+function saveUrl() {
+	const url = location.href;
+	localStorage.setItem(url_key, url);
+}
+
+function loadUrl(){
+	const url = localStorage.getItem(url_key);
+	console.log("URL loaded: ", url);
+	return url;
+}
 
 
 function initViewer(){
@@ -794,13 +805,26 @@ const kokudoLayer = L.tileLayer('https://cyberjapandata.gsi.go.jp/xyz/seamlessph
 	//URLに座標が付いていたらその場所を初期位置にする。
 	const url = location.href;
 	const match = url.match(/#(\d{1,2})\/(-?\d[0-9.]*)\/(-?\d[0-9.]*)/);
+	//座標が付いていない場合は、前回開いたときのURLを開く
+	const prev_url = loadUrl();
+	let prev_match;
+	if (prev_url) prev_match = prev_url.match(/#(\d{1,2})\/(-?\d[0-9.]*)\/(-?\d[0-9.]*)/);
+
 	if (match){
 		const [, zoom, lat, lon] = match;
 		map.setView([lat, lon], zoom);
-	} else {
+	} else if (prev_match){
+		const [, zoom, lat, lon] = prev_match;
+		map.setView([lat, lon], zoom);
+	} else
+	{
 		map.setView([52.1564626, 5.389414243], 16);
 	}
 	
+	//地図を移動したらその場所を保存
+	map.on('moveend', function(e){
+		saveUrl();
+	});
 
 }
 
