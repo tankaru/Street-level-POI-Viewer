@@ -14,6 +14,7 @@ json = [{
 	text:
 	url:
 	tags:{}
+	distance:
 }]
 
 */
@@ -22,9 +23,14 @@ let map;
 let viewer;
 let viewer_marker;
 
+let viewer_route;
+let map_route;
+let map_marker;
+
 const R = 6378100;	
 const height = 2.2;
 const client_id = 'NEh3V0ZjaE1fT1Nkdk9jMnJlSGNQQTowYjljOTA5MWI0N2EzOTBh';
+const ors_client_id = '5b3ce3597851110001cf6248e7943784fb51427ebaafda20404a762e';
 const url_key = 'Streetlevel POI viewer, URL';
 
 initMap();
@@ -54,6 +60,7 @@ function initViewer(){
 				cover: false,
 				tag: true,
 				popup: true,
+				marker:true,
 			},
 		}
 	);
@@ -337,10 +344,12 @@ function addNodes(nodes){
 	});
 	for (let j = 0; j < node_xys.length; j++){
 		//ポップアップを作成
-		const xy = node_xys[j];
+		let xy = node_xys[j];
+
 		const div = document.createElement('div');
 		if (xy.osm.tags.name){
-
+			xy.osm.distance = node_xys[j].distance;
+			xy.osm.name = xy.osm.tags.name;
 			div.innerHTML = divContent(xy.osm, "amenity");
 			div.className = "tooltip1";
 			//遠い店舗は文字を小さく
@@ -389,6 +398,7 @@ function addWikipediaNodes(nodes){
 
 		const text = wikipadiaLabel(xy.osm.name, xy.osm.img, xy.distance);
 		xy.osm.text = text;
+		xy.osm.distance = xy.distance;
 
 		div.innerHTML = divContent(xy.osm,"wikipedia");
 		div.className = "tooltip1";
@@ -411,14 +421,22 @@ function addWikipediaNodes(nodes){
 
 
 function divContent(json, pclass = ""){
-	let content;
+	let content = "";
 	let tooltip = "";
 	let tags = "";
 
-	if (json.tags) tags = json.tags;
-	tooltip = tooltipContent(tags);
-	content = `<p class="${pclass}"><a target="_blank" href="${json.url}">${json.text}</a></p>
-	<div class="description1">${tooltip}</div>`;
+	if (json.tags){
+		tags = json.tags;
+		tooltip = tooltipContent(tags);
+	}
+	let showroute = "";
+	if (Number(json.distance) < 2000){
+		showroute = `<input type="button" onclick="showRoute(${json.lat},${json.lon}, '${escape(json.name)}');" value="Show route to ${json.name}">`;
+	}
+
+	content = `<p class="${pclass}"><a target="_blank" href="${json.url}">${json.text}</a><br/></p>
+		<div class="description1">${tooltip}${showroute}</div>`;
+
 	return content;
 
 }
@@ -431,7 +449,113 @@ function tooltipContent(tags){
 	return tooltip_content;
 }
 
+function showRoute(lat, lon, escaped_name){
+	const name = unescape(escaped_name);
+	//alert(name + ", " + lat + ", " + lon);
+
+	let request = new XMLHttpRequest();
+
+	request.open('POST', "https://api.openrouteservice.org/v2/directions/foot-walking/geojson");
+
+	request.setRequestHeader('Accept', 'application/json, application/geo+json, application/gpx+xml, img/png; charset=utf-8');
+	request.setRequestHeader('Content-Type', 'application/json');
+	request.setRequestHeader('Authorization', ors_client_id);
+
+	request.onreadystatechange = function () {
+		if (this.readyState === 4) {
+			console.log('Status:', this.status);
+			console.log('Headers:', this.getAllResponseHeaders());
+			console.log('Body:', this.responseText);
+
+			const geojsonFeature = JSON.parse(this.responseText);
+			showRouteOnMap(geojsonFeature,name);
+			showRouteOnViewer(geojsonFeature, name);
+			//console.log(JSON.stringify(response, null, 2));
+			//const coordinates = geojsonFeature.features[0].geometry.coordinates;
+			//console.log(coordinates);
+
+		}
+	};
+
+	const start = [Number(node_latlon.lon), Number(node_latlon.lat)];
+	const goal = [Number(lon), Number(lat)];
+	const body = `{"coordinates":[${JSON.stringify(start)},${JSON.stringify(goal)}]}`;
+
+
+	request.send(body);
+
+}
+
+function showRouteOnMap(geojsonFeature, name){
+	map_route.clearLayers();
+
+
+	map_route = L.geoJSON(geojsonFeature).addTo(map);
+	map_marker.setTooltipContent(name);
+	const coordinates = geojsonFeature.features[0].geometry.coordinates;
+
+	map_marker.setLatLng([coordinates[coordinates.length-1][1],coordinates[coordinates.length-1][0]]);
+}
+
+function showRouteOnViewer(geojsonFeature, name){
+	const coordinates = geojsonFeature.features[0].geometry.coordinates;
+	const navigationPoints = dividePoints(coordinates, 3);	
+
+	//add markers as a path on mapillary viewer
+	let markers = [];
+	for (i=0; i<navigationPoints.length-1; i++){
+		let marker = new Mapillary.MarkerComponent.CircleMarker(
+			i.toString(),
+			{lat: navigationPoints[i][1], lon: navigationPoints[i][0]},
+			{
+
+				color: 0x0000FF,
+				opacity: 0.6,
+
+				radius: 0.5,
+			}
+		);
+		markers.push(marker);
+	}
+
+	let markerComponent = viewer.getComponent('marker');
+	markerComponent.removeAll();
+	markerComponent.add(markers);
+	markerComponent.on(
+		Mapillary.MarkerComponent.MarkerComponent.changed,
+		function(e) {
+			console.log('Marker changed:', e.marker.id, e.marker.latLon);
+		}
+	);
+}
+function earthDistance(point1, point2) {
+	return hubeny(point1[1], point1[0], point2[1], point2[0]);
+}
+
+function dividePoints(points, distance) {
+	let dividedPoints = [];
+	for (let i = 0; i < points.length - 1; i++) {
+		const section_length = earthDistance(points[i], points[i + 1]);
+		const dlat = points[i + 1][1] - points[i][1];
+		const dlon = points[i + 1][0] - points[i][0];
+		const ddlat = dlat * distance / section_length;
+		const ddlon = dlon * distance / section_length;
+
+		let dist = 0;
+		let j = 0;
+		dividedPoints.push(points[i])
+		while (true) {
+			dist += distance;
+			if (dist > section_length) break;
+			j++;
+			dividedPoints.push([points[i][0] + j * ddlon, points[i][1] + j * ddlat]);
+		}
+
+	}
+	return dividedPoints;
+}
 //
+/*
 function addWays(ways, nodes, color, width, name){
 		//-----
 	let way_polygons = [];
@@ -470,8 +594,10 @@ function addWays(ways, nodes, color, width, name){
 	tagComponent.add(way_polygons);				
 	window.addEventListener("resize", function() { viewer.resize(); });
 }
+*/
 
 //ウェイデータの描画がスムーズになるように細かく分割
+/*
 function getDetailedLatlons(latlons, count){
 	
 	let detailed_latlons = [];
@@ -493,6 +619,7 @@ function getDetailedLatlons(latlons, count){
 	
 	return detailed_latlons;
 }
+*/
 
 function getDlat(distance){
 	return Math.atan(distance/R) * 180 / Math.PI;
@@ -643,7 +770,7 @@ function buttonPOI(){
 
 			const [distance, phi] = getDistancePhi(node_latlon, {lat:coordinates.lat, lon:coordinates.lon});
 
-			const element = {type:"node", lat:coordinates.lat, lon:coordinates.lon, text:`${name}<br/>${Math.round(distance).toLocaleString()} m`, url: `https://en.wikipedia.org/wiki/${name}`, tags: {name:name}};
+			const element = {type:"node", lat:coordinates.lat, lon:coordinates.lon, text:`${name}<br/>${Math.round(distance).toLocaleString()} m`, url: `https://en.wikipedia.org/wiki/${name}`, tags: {}};
 			specialjson = [element];
 
 			drawSpecialNode(specialjson);
@@ -679,7 +806,8 @@ function drawSpecialNode(json){
 	const lon_av = lon_sum/node_count;
 
 	//nameを取得する
-	let object;
+	let object = osm_elements[0];
+	/*
 	for (let i=0; i<osm_elements.length; i++){
 		const item = osm_elements[i];
 		if(item.tags){
@@ -690,6 +818,7 @@ function drawSpecialNode(json){
 			}
 		}
 	}	
+	*/
 
 	const [distance, phi] = getDistancePhi(node_latlon, {lat:lat_av, lon:lon_av});
 	const x = ((phi - node_ca + 180) % 360 + 360) /360;
@@ -797,6 +926,8 @@ const kokudoLayer = L.tileLayer('https://cyberjapandata.gsi.go.jp/xyz/seamlessph
 });
 
   viewer_marker = L.marker([0,0], { icon: sampleIcon, rotationAngle: 45, draggable: false }).addTo(map);
+  map_route = L.geoJSON().addTo(map);
+  map_marker = L.marker([0,0], {}).bindTooltip("").addTo(map);
   
 
   	
