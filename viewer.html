@@ -29,6 +29,7 @@
         #nav ul{margin: 0px; margin-left: 10px; padding: 0px; list-style: none;}
 		#attributions {font-size: x-small; background-color: rgba(0, 0, 0, 0.5);color: #ccc; padding: 3px; position:fixed; bottom:0px; left:0px; }
         #attributions a:link, a:visited, a:hover, a:active {  color: #ccc;}
+        h2 {margin: 0px; font-size:100%;}
 
 #mapcontainer {
     width: 300px;
@@ -104,11 +105,10 @@
 
 
         <div id='nav'>
-            <h2>Street-level POI Viewer</h2>
+            <h1>Street-level POI Viewer</h1>
             <div>
-                <ul id="osm_options">
-                    <li>OpenStreetMap:</li>
-                    <ul>
+                <h2>OpenStreetMap:</h2>
+                    <ul id="osm_options">
 
                         <li>
                             Category:
@@ -130,11 +130,8 @@
                         </li>
                     </ul>
 
-
-                </ul>
+                <h2>Wikipedia:</h2>
                 <ul id="wikipedia_options">
-                    <li>Wikipedia:</li>
-                    <ul>
                         <li>
                             <form onsubmit="buttonPOI(); return false;">Global: <input type="text" class=""
                                     id="poi_string" value="Eiffel Tower" size="15"></form>
@@ -142,10 +139,9 @@
                         <li>Neaby: <input type="button" class="" id="" value="Search" onclick="buttonWikipedia()"></li>
                         <li style="font-size: small;">Filter by Lang: <input type="text" class="" id="filter_lang" value="en"
                                 size="5"></li>
-                    </ul>
                 </ul>
-                <li style="text-align: right;"><input type="button" class="" id="" value="Close all"
-                        onclick="buttonCloseAll()"></li>
+                <p style="text-align: right; margin:3px;"><input type="button" class="" id="" value="Close all"
+                        onclick="buttonCloseAll()"></p>
             </div>
         </div>
     </div>
