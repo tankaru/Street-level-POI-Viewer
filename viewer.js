@@ -1008,3 +1008,22 @@ function buttonGoCenter(){
 	moveToCenter();
 
 }
+
+let enlarged = false;
+
+function toggleMapSize(){
+	if (enlarged){
+		$('#mapcontainer').css('width', 300);
+		$('#mapcontainer').css('height', 200);
+		$('#button_map_size').attr('value', 'Enlarge map');
+		enlarged = false;
+	} else {
+		$('#mapcontainer').css('width', $(window).width()*0.8);
+		$('#mapcontainer').css('height', $(window).height()*0.8);
+		$('#button_map_size').attr('value', 'Shrink map');
+		enlarged = true;
+	}
+
+	map.invalidateSize();
+
+}
