@@ -793,13 +793,16 @@ function buttonPOI(){
 			const pages = json.query.pages;
 			const page = Object.keys(pages)[0];
 			const name = pages[page].title;
-			const coordinates = pages[page].coordinates[0];
 
 			//座標がなかったらダメ
-			if (!coordinates) {
+			if (!pages[page].coordinates) {
 				alert("No data");
 				return;
 			}
+
+			const coordinates = pages[page].coordinates[0];
+
+
 
 			const [distance, phi] = getDistancePhi(node_latlon, {lat:coordinates.lat, lon:coordinates.lon});
 
