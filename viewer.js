@@ -183,8 +183,18 @@ function storeOverpass(key_string){
 	request.open('GET', url , true);
 	request.onload = function () {
 	
-		data = this.response;
-		overpassjson = convertNodesWaysToNodes(JSON.parse(data).elements);
+		const data = JSON.parse(this.response);
+
+		console.log("storeOverpass: ", JSON.stringify(data, null, 2));
+		
+		//データが入っていなかったらダメ
+		if (data.elements < 1) {
+			alert("No data");
+			return;
+		}
+		
+
+		overpassjson = convertNodesWaysToNodes(data.elements);
 		for (let i=0; i<overpassjson.length; i++){
 			overpassjson[i].text = tag2Img(overpassjson[i].tags) + overpassjson[i].tags.name;
 			overpassjson[i].url = `https://www.openstreetmap.org/${overpassjson[i].type}/${overpassjson[i].id}`;
@@ -431,7 +441,7 @@ function divContent(json, pclass = ""){
 	}
 	let showroute = "";
 	if (Number(json.distance) < 2000){
-		showroute = `<input type="button" onclick="showRoute(${json.lat},${json.lon}, '${escape(json.name)}');" value="Show route to ${json.name}">`;
+		showroute = `<input type="button" onclick="showRoute(${json.lat},${json.lon}, '${escape(json.name)}');" value="Route to ${json.name}">`;
 	}
 
 	content = `<p class="${pclass}"><a target="_blank" href="${json.url}">${json.text}</a><br/></p>
@@ -466,6 +476,10 @@ function showRoute(lat, lon, escaped_name){
 			console.log('Status:', this.status);
 			console.log('Headers:', this.getAllResponseHeaders());
 			console.log('Body:', this.responseText);
+
+			if (this.status != 200){
+				alert("Routing error");
+			}
 
 			const geojsonFeature = JSON.parse(this.responseText);
 			showRouteOnMap(geojsonFeature,name);
@@ -697,7 +711,7 @@ function drawGrid(){
 
 function buttonWikipedia(){
 	
-	const url = `https://en.wikipedia.org/w/api.php?origin=*&format=json&action=query&generator=geosearch&prop=coordinates%7Cpageimages&ggscoord=${node_latlon.lat}%7C${node_latlon.lon}&ggsradius=1000&ggslimit=10`;
+	const url = `https://${getFilterLang()}.wikipedia.org/w/api.php?origin=*&format=json&action=query&generator=geosearch&prop=coordinates%7Cpageimages&ggscoord=${node_latlon.lat}%7C${node_latlon.lon}&ggsradius=1000&ggslimit=10`;
 	console.log(url);			
 
 	let request = new XMLHttpRequest();
@@ -709,6 +723,16 @@ function buttonWikipedia(){
 		data = this.response;
 
 		const json = JSON.parse(data);
+
+		console.log(JSON.stringify(json, null, 2));
+
+		//queryが入っていなかったらダメ
+		let query = json.query;
+		if (!query) {
+			alert("No data");
+			return;
+		}
+
 
 
 		let elements = [];
@@ -728,7 +752,7 @@ function buttonWikipedia(){
 
 			const text = wikipadiaLabel(name, img, distance);
 
-			const element = {type:"node",name:name, img:img, lat:lat, lon:lon, text: text, url: `https://en.wikipedia.org/wiki/${name}`, tags: {}};
+			const element = {type:"node",name:name, img:img, lat:lat, lon:lon, text: text, url: `https://${getFilterLang()}.wikipedia.org/wiki/${name}`, tags: {}};
 			elements.push(element);
 
 		}
@@ -751,8 +775,8 @@ function buttonPOI(){
 
 	if (poi_string){
 		const encoded_query = encodeURI(poi_string);
-	
-		const url = 'https://en.wikipedia.org/w/api.php?origin=*&action=query&format=json&prop=coordinates&titles=' + encoded_query;
+
+		const url = `https://${getFilterLang()}.wikipedia.org/w/api.php?origin=*&action=query&format=json&prop=coordinates&titles=${encoded_query}`;
 		console.log(url);			
 		let request = new XMLHttpRequest();
 
@@ -763,10 +787,19 @@ function buttonPOI(){
 			data = this.response;
 			json = JSON.parse(data);
 
+			console.log(JSON.stringify(json, null, 2));
+
+
 			const pages = json.query.pages;
 			const page = Object.keys(pages)[0];
 			const name = pages[page].title;
 			const coordinates = pages[page].coordinates[0];
+
+			//座標がなかったらダメ
+			if (!coordinates) {
+				alert("No data");
+				return;
+			}
 
 			const [distance, phi] = getDistancePhi(node_latlon, {lat:coordinates.lat, lon:coordinates.lon});
 
@@ -780,6 +813,15 @@ function buttonPOI(){
 		request.send();
 
 	}
+}
+
+function getFilterLang(){
+	let lang = "en";
+	const filter_lang = document.getElementById("filter_lang").value;
+	if (filter_lang){
+		lang=filter_lang;
+	}
+	return lang;
 }
 
 function drawSpecialNode(json){

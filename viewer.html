@@ -10,12 +10,25 @@
 	<link rel="stylesheet" href="https://unpkg.com/leaflet@1.3.1/dist/leaflet.css">
     <script src="https://unpkg.com/leaflet@1.3.1/dist/leaflet.js"></script>
     
+    <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+    <script src="https://code.jquery.com/jquery-1.12.4.js"></script>
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+    <script>
+        $(function () {
+            $("#nav").accordion({
+                collapsible: true
+            });
+            $('.ui-accordion-content ').css('padding', '3px');
+        });
+    </script>
+
     <style>
         html, body { margin: 0; padding: 0; height: 100%; }
         #mly { 	height: 100%; }
-        #textinformation {text-align: right;position:fixed; top:10px; left:10px; background-color: white; padding: 3px}
-		#nav {padding: 3px}
-		#attributions {font-size: x-small; background-color: #ddd; padding: 3px}
+		#nav {position:fixed; top:10px; left:10px; margin:0px; padding: 3px}
+        #nav ul{margin: 0px; margin-left: 10px; padding: 0px; list-style: none;}
+		#attributions {font-size: x-small; background-color: rgba(0, 0, 0, 0.5);color: #ccc; padding: 3px; position:fixed; bottom:0px; left:0px; }
+        #attributions a:link, a:visited, a:hover, a:active {  color: #ccc;}
 
 #mapcontainer {
     width: 300px;
@@ -81,39 +94,69 @@
     display: inline-block;
 }
 
+
     </style>
 </head>
 <body>
 
     <div id='mly'></div>
     <div id='textinformation'>
-        <div id="attributions">
-            Images from <a href="https://www.mapillary.com/">Mapillary</a>, <a href="https://commons.wikimedia.org/wiki/Main_Page">Wikimedia</a><br/>
-            POI data: <a href="https://www.openstreetmap.org/copyright">(C)OpenStreetMap contributors</a>, <a href="https://en.wikipedia.org/wiki/Main_Page">Wikipedia</a><br/>
-            Routing: <a href="https://openrouteservice.org/">openrouteservice.org</a>
-        </div>
+
+
         <div id='nav'>
-            <div id="advanced">
-            (Option) Historic data: <input type="date" id="osm_data_date" value="">
-            <br/>OSM name: <input type="text" class="" id="osm_name" value="Walmart" size="15"><input type="button" id="" value="Search" onclick="buttonOverpassName()">
+            <h2>POI Viewer</h2>
+            <div>
+                <ul id="osm_options">
+                    <li>OpenStreetMap:</li>
+                    <ul>
+
+                        <li>
+                            Category:
+                            <select id="osm_keys">
+                                <option value="amenity">amenity</option>
+                                <option value="shop">shop</option>
+                                <option value="leisure">leisure</option>
+                                <option value="historic">historic</option>
+                                <option value="tourism">tourism</option>
+                            </select>
+                            <input type="button" value="Search" onclick="buttonOverpassKey()">
+                        </li>
+                        <li>
+                            <form onsubmit="buttonOverpassName(); return false;">Name: <input type="text" class=""
+                                    id="osm_name" value="Walmart" size="15"></form>
+                        </li>
+
+                        <li style="font-size: small;">Filter by date: <input type="date" id="osm_data_date" value="">
+                        </li>
+                    </ul>
+
+
+                </ul>
+                <ul id="wikipedia_options">
+                    <li>Wikipedia:</li>
+                    <ul>
+                        <li>
+                            <form onsubmit="buttonPOI(); return false;">Global: <input type="text" class=""
+                                    id="poi_string" value="Eiffel Tower" size="15"></form>
+                        </li>
+                        <li>Neaby: <input type="button" class="" id="" value="Search" onclick="buttonWikipedia()"></li>
+                        <li style="font-size: small;">Filter by Lang: <input type="text" class="" id="filter_lang" value="en"
+                                size="5"></li>
+                    </ul>
+                </ul>
+                <li style="text-align: right;"><input type="button" class="" id="" value="Close all"
+                        onclick="buttonCloseAll()"></li>
             </div>
-            OSM key:
-            <select id="osm_keys">
-                <option value="amenity">amenity</option>
-                <option value="shop">shop</option>
-                <option value="leisure">leisure</option>
-                <option value="historic">historic</option>
-                <option value="tourism">tourism</option>
-            </select>
-            <input type="button" value="Show OSM" onclick="buttonOverpassKey()">
-            <br />POI name: <input type="text" class="" id="poi_string" value="Eiffel Tower" size="15"><input type="button" class="" id="" value="Show POI" onclick="buttonPOI()">       
-            <br/>Wikipedia: <input type="button" class="" id="" value="Show Wikipedia" onclick="buttonWikipedia()">   
-            <br/><input type="button" class="" id="" value="Close all" onclick="buttonCloseAll()">
         </div>
     </div>
     <div id="mapcontrol">
         <div id='mapcontainer'></div>
         <div style="text-align:right"><input type="button" class="" id="" value="Go to map center" onclick="buttonGoCenter()"></div>
+    </div>
+    <div id="attributions">
+        Images from <a href="https://www.mapillary.com/">Mapillary</a>, <a href="https://commons.wikimedia.org/wiki/Main_Page">Wikimedia</a><br/>
+        POI data: <a href="https://www.openstreetmap.org/copyright">(C)OpenStreetMap contributors</a>, <a href="https://en.wikipedia.org/wiki/Main_Page">Wikipedia</a><br/>
+        Routing: <a href="https://openrouteservice.org/">openrouteservice.org</a>
     </div>
 
     <script src="leaflet.rotatedMarker.js"></script>
