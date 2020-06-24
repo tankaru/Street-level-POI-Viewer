@@ -352,6 +352,7 @@ function addNodes(nodes){
 		if (a.distance < b.distance) return 1;
 		return 0;
 	});
+	let popup_number = 0;
 	for (let j = 0; j < node_xys.length; j++){
 		//ポップアップを作成
 		let xy = node_xys[j];
@@ -371,9 +372,11 @@ function addNodes(nodes){
 			//遠い店舗は上のほうに表示
 			popup.setBasicPoint([xy.x, xy.y - 0.05*(xy.distance/50)]);
 			popupComponent.add([popup]);
+			popup_number++;
 
 		}
 	}
+	if (popup_number < 1) alert("No named objects");
 
 
 	
