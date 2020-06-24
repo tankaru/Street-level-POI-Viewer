@@ -188,7 +188,7 @@ function storeOverpass(key_string){
 		console.log("storeOverpass: ", JSON.stringify(data, null, 2));
 		
 		//データが入っていなかったらダメ
-		if (data.elements < 1) {
+		if (data.elements.length < 1) {
 			alert("No data");
 			return;
 		}
@@ -806,7 +806,7 @@ function buttonPOI(){
 
 			const [distance, phi] = getDistancePhi(node_latlon, {lat:coordinates.lat, lon:coordinates.lon});
 
-			const element = {type:"node", lat:coordinates.lat, lon:coordinates.lon, text:`${name}<br/>${Math.round(distance).toLocaleString()} m`, url: `https://en.wikipedia.org/wiki/${name}`, tags: {}};
+			const element = {type:"node", lat:coordinates.lat, lon:coordinates.lon, text:`${name}<br/>${Math.round(distance).toLocaleString()} m`, url: `https://${getFilterLang()}.wikipedia.org/wiki/${name}`, tags: {}};
 			specialjson = [element];
 
 			drawSpecialNode(specialjson);
